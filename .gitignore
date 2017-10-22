@@ -1,0 +1,9 @@
+obj/
+bin/
+
+vs/x64/
+vs/.vs/
+vs/*.user
+
+*.sublime-project
+*.sublime-workspace
