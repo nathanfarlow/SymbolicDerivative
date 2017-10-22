@@ -4,6 +4,7 @@
 #include "yvar.h"
 
 int main(int argc, const char **argv) {
+    int error;
 
     if (argc <= 1) {
         printf("Usage: derivative.exe C:\\path\\to\\yvar.8xy\n");
@@ -27,10 +28,22 @@ int main(int argc, const char **argv) {
     }
 
     tokenizer_t t;
-    tokenize(&t, yvar.data, yvar.yvar_data_len);
+    error = tokenize(&t, yvar.data, yvar.yvar_data_len);
 
-    ast_t *e = parse(&t);
+    if (error != 0) {
+        printf("Syntax error: unable to tokenize yvar.");
+        getchar();
+        return -1;
+    }
 
+    ast_t *e = parse(&t, &error);
+
+    if (error != 0) {
+        printf("Syntax error: unable to parse ast.");
+        getchar();
+        return -1;
+    }
+    
     ast_Cleanup(e);
     tokenizer_Cleanup(&t);
 

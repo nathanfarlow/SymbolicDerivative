@@ -57,7 +57,7 @@ typedef enum _TokenType {
 
     //Numbers and symbols
     TOK_NUMBER, TOK_SYMBOL, //numbers, variables, pi, e
-    
+
     //Binary operators
     TOK_ADD, TOK_SUBTRACT,
     TOK_MULTIPLY, TOK_DIVIDE,
@@ -116,16 +116,23 @@ typedef struct _Tokenizer {
 void tokenizer_Cleanup(tokenizer_t *t);
 
 int tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length);
-ast_t *parse(tokenizer_t *t);
+ast_t *parse(tokenizer_t *t, int *error);
 
 //there can be only 2 bytes, one is extended byte
 #define IDENTIFIER_MAX_BYTES 2
+
+//direction for unary operators - is left, ^2 is right
+typedef enum _Direction {
+    NONE, LEFT, RIGHT
+} Direction;
 
 //used to read bytes from yvar into tokens
 typedef struct _Identifier {
 
     NodeType node_type;
     TokenType token_type;
+
+    Direction direction;
 
     uint8_t length;
     uint8_t bytes[IDENTIFIER_MAX_BYTES];

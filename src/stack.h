@@ -4,19 +4,19 @@
 //the default stack size
 #define STACK_START 10
 
-typedef struct {
+typedef struct _Stack {
     unsigned int _max;
     unsigned int top;
     void **items;
-} Stack;
+} stack_t;
 
-void stack_Create(Stack *s);
-void stack_Cleanup(Stack *s);
+void stack_Create(stack_t *s);
+void stack_Cleanup(stack_t *s);
 
-void stack_Push(Stack *s, void *item);
-void *stack_Pop(Stack *s);
-void *stack_Peek(Stack *s);
+void stack_Push(stack_t *s, void *item);
+void *stack_Pop(stack_t *s);
+void *stack_Peek(stack_t *s);
 
-void stack_Clear(Stack *s);
+void stack_Clear(stack_t *s);
 
 #endif
