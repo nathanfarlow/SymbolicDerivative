@@ -56,19 +56,35 @@ void ast_Cleanup(ast_t *e);
 typedef enum _TokenType {
 
     //Numbers and symbols
-    TOK_NUMBER, TOK_SYMBOL, //numbers, variables, pi, e, etc. Cannot be represented by identifier_t
-
-    //Operators
-    TOK_ADD, TOK_SUBTRACT, //+, -
-    TOK_MULTIPLY, TOK_DIVIDE, //*, /
+    TOK_NUMBER, TOK_SYMBOL, //numbers, variables, pi, e
+    
+    //Binary operators
+    TOK_ADD, TOK_SUBTRACT,
+    TOK_MULTIPLY, TOK_DIVIDE,
     TOK_FRACTION, //special '/' for ti pretty print
+    TOK_POWER, TOK_ROOT,
+
+    //Unary operators
     TOK_NEGATE, //-
-    TOK_POWER, TOK_RECRIPROCAL, TOK_SQUARE, TOK_CUBE, //^
+    TOK_RECRIPROCAL, TOK_SQUARE, TOK_CUBE, //These are replaced with TOK_POWER in AST
 
+    //Binary functions (have to have special parsing for params)
+    TOK_LOG_BASE,
+
+    //Unary functions
+    TOK_INT, TOK_ABS, 
+    TOK_SQRT, TOK_CUBED_ROOT, 
+    TOK_LN, TOK_E_TO_POWER,
+    TOK_LOG, TOK_10_TO_POWER,
+    TOK_SIN, TOK_SIN_INV,
+    TOK_COS, TOK_COS_INV,
+    TOK_TAN, TOK_TAN_INV,
+    TOK_SINH, TOK_SINH_INV,
+    TOK_COSH, TOK_COSH_INV,
+    TOK_TANH, TOK_TANH_INV,
+    
     //Placeholders
-    TOK_OPEN_PAR, TOK_CLOSE_PAR, //(, )
-
-    //Functions
+    TOK_OPEN_PAR, TOK_CLOSE_PAR, TOK_COMMA,
 
     AMOUNT_TOKENS, //used to automatically detect the size of our identifiers array, never used as a token
 

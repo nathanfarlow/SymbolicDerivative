@@ -8,18 +8,46 @@
 identifier_t identifiers[AMOUNT_TOKENS] = {
     {NODE_NUMBER, TOK_NUMBER, 0, 0},
     {NODE_SYMBOL, TOK_SYMBOL, 0, 0},
+
     {NODE_BINARY, TOK_ADD, 1, 0x70},
     {NODE_BINARY, TOK_SUBTRACT, 1, 0x71},
     {NODE_BINARY, TOK_MULTIPLY, 1, 0x82},
     {NODE_BINARY, TOK_DIVIDE, 1, 0x83},
     {NODE_BINARY, TOK_FRACTION, 2, {0xEF, 0x2E}},
-    {NODE_BINARY, TOK_NEGATE, 1, 0xB0},
     {NODE_BINARY, TOK_POWER, 1, 0xF0},
-    {NODE_BINARY, TOK_RECRIPROCAL, 1, 0x0C},
-    {NODE_BINARY, TOK_SQUARE, 1, 0x0D},
-    {NODE_BINARY, TOK_CUBE, 1, 0x0F},
+    {NODE_BINARY, TOK_ROOT, 1, 0xF1},
+
+    {NODE_UNARY, TOK_NEGATE, 1, 0xB0},
+    {NODE_UNARY, TOK_RECRIPROCAL, 1, 0x0C},
+    {NODE_UNARY, TOK_SQUARE, 1, 0x0D},
+    {NODE_UNARY, TOK_CUBE, 1, 0x0F},
+
+    {NODE_BINARY, TOK_LOG_BASE, 2, {0xEF, 0x34}}, //first param = value, second = base
+
+    {NODE_UNARY, TOK_INT, 1, 0xB1},
+    {NODE_UNARY, TOK_ABS, 1, 0xB2},
+    {NODE_UNARY, TOK_SQRT, 1, 0xBC},
+    {NODE_UNARY, TOK_CUBED_ROOT, 1, 0xBD},
+    {NODE_UNARY, TOK_LN, 1, 0xBE},
+    {NODE_UNARY, TOK_E_TO_POWER, 1, 0xBF},
+    {NODE_UNARY, TOK_LOG, 1, 0xC0},
+    {NODE_UNARY, TOK_10_TO_POWER, 1, 0xC1},
+    {NODE_UNARY, TOK_SIN, 1, 0xC2},
+    {NODE_UNARY, TOK_SIN_INV, 1, 0xC3},
+    {NODE_UNARY, TOK_COS, 1, 0xC4},
+    {NODE_UNARY, TOK_COS_INV, 1, 0xC5},
+    {NODE_UNARY, TOK_TAN, 1, 0xC6},
+    {NODE_UNARY, TOK_TAN_INV, 1, 0xC7},
+    {NODE_UNARY, TOK_SINH, 1, 0xC8},
+    {NODE_UNARY, TOK_SINH_INV, 1, 0xC9},
+    {NODE_UNARY, TOK_COSH, 1, 0xCA},
+    {NODE_UNARY, TOK_COSH_INV, 1, 0xCB},
+    {NODE_UNARY, TOK_TANH, 1, 0xCC},
+    {NODE_UNARY, TOK_TANH_INV, 1, 0xCD},
+
     {-1, TOK_OPEN_PAR, 1, 0x10},
     {-1, TOK_CLOSE_PAR, 1, 0x11},
+    {-1, TOK_COMMA, 1, 0x2B}
 };
 
 double num_ToDouble(num_t num) {
@@ -118,8 +146,12 @@ void tokenizer_Cleanup(tokenizer_t *t) {
 #define is_num(byte) (byte >= 0x30 && byte <= 0x3A) /*'0' through '.'*/
 #define is_one_byte_symbol(byte) ((byte >= 0x41 && byte <= 0x5B) || byte ==  0xAC) /*A through Z, theta, pi. does not include 'e'*/
 
+#define is_tok_operator(tok) (tok >= TOK_ADD && tok <= TOK_CUBE)
+#define is_tok_unary_function(tok) (tok >= TOK_INT && tok <= TOK_TANH_INV)
+#define is_tok_binary_function(tok) (tok == TOK_LOG_BASE)
+
 //algorithm that returns a token by using the identifiers array
-TokenType read_token(const uint8_t *equation, unsigned index, unsigned length) {
+TokenType read_identifier(const uint8_t *equation, unsigned index, unsigned length) {
     unsigned identifier_index;
     //skip tok_number and tok_symbol
     for(identifier_index = TOK_ADD; identifier_index < AMOUNT_TOKENS; identifier_index++) {
@@ -182,65 +214,63 @@ uint8_t read_symbol(const uint8_t *equation, unsigned index, unsigned length, un
     return SYMBOL_ERROR;
 }
 
+token_t read_token(const uint8_t *equation, unsigned index, unsigned length, unsigned *consumed) {
+    token_t tok;
+    char c = equation[index];
+
+    *consumed = 0;
+
+    if (is_num(c)) {
+        tok.type = TOK_NUMBER;
+        tok.op.number = read_num(equation, index, length);
+
+        *consumed = tok.op.number.length;
+    }
+    else if (read_symbol(equation, index, length, NULL) != SYMBOL_ERROR) {
+        uint8_t symbol;
+        unsigned symbol_length;
+
+        symbol = read_symbol(equation, index, length, &symbol_length);
+
+        tok.type = TOK_SYMBOL;
+        tok.op.symbol = symbol;
+
+        *consumed = symbol_length;
+    }
+    else {
+        tok.type = read_identifier(equation, index, length);
+
+        *consumed = tok.type == TOK_ERROR ? 1 : identifiers[tok.type].length;
+    }
+
+    return tok;
+}
+
 unsigned _tokenize(token_t *tokens, const uint8_t *equation, unsigned length, int *error) {
     unsigned token_index = 0;
     unsigned i;
 
     for(i = 0; i < length; i++) {
-        uint8_t c = equation[i];
+        unsigned consumed;
+        
+        //have to separate these lines due to a compiler error lol
+        token_t tok;
+        tok = read_token(equation, i, length, &consumed);
 
-        if(is_num(c)) {
-            token_t tok;
-            tok.type = TOK_NUMBER;
-            tok.op.number = read_num(equation, i, length);
-
-            if (tokens != NULL) {
-                tokens[token_index++] = tok;
-            }
-            else {
+        if(tok.type == TOK_NUMBER) {
+            if (tokens == NULL)
                 num_Cleanup(tok.op.number);
-                token_index++;
-            }
-
-            i += tok.op.number.length - 1;
-        } else if(read_symbol(equation, i, length, NULL) != SYMBOL_ERROR) {
-            token_t tok;
-
-            uint8_t symbol;
-            unsigned symbol_length;
-
-            symbol = read_symbol(equation, i, length, &symbol_length);
-
-            tok.type = TOK_SYMBOL;
-            tok.op.symbol = symbol;
-
-            if (tokens != NULL) {
-                tokens[token_index++] = tok;
-            }
-            else token_index++;
-
-            i += symbol_length - 1;
-        } else {
-            //have to separate these lines due to a compiler error lol
-            token_t tok;
-            TokenType type;
-
-            type = read_token(equation, i, length);
-
-            if(type != TOK_ERROR) {
-                tok.type = type;
-
-                if(tokens != NULL) {
-                    tokens[token_index++] = tok;
-                } else token_index++;
-
-                i += identifiers[type].length - 1;
-                
-            } else {
-                if(error != NULL) *error = -1;
-                return 0;
-            }
+        } else if(tok.type == TOK_ERROR) {
+            *error = -1;
+            //at index i.
+            return 0;
         }
+
+        if(tokens != NULL)
+            tokens[token_index] = tok;
+        token_index++;
+
+        i += consumed - 1;
     }
 
     return token_index;
