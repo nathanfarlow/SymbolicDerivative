@@ -27,11 +27,12 @@ int main(int argc, const char **argv) {
     }
 
     tokenizer_t t;
-    tokenizer_Tokenize(&t, yvar.data, yvar.yvar_data_len);
+    tokenize(&t, yvar.data, yvar.yvar_data_len);
 
-    ast_t *e = ast_Parse(&t);
+    ast_t *e = parse(&t);
 
-    ast_Cleanup(e); //cleans up strings passed from tokenizer as well
+    ast_Cleanup(e);
+    tokenizer_Cleanup(&t);
 
     yvar_Cleanup(&yvar);
     fclose(file);

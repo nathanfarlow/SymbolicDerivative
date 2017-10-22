@@ -40,5 +40,82 @@ num_t num_FromDouble(double d) {
 }
 
 void num_Cleanup(num_t num) {
-    free(num.number);
+    if(num.number != NULL) {
+        free(num.number);
+        num.number = NULL;
+    }
+}
+
+
+ast_t *ast_MakeNumber(num_t num) {
+    ast_t *e = malloc(sizeof(ast_t));
+
+    e->type = NODE_NUMBER;
+    e->op.number = num;
+
+    return e;
+}
+
+ast_t *ast_MakeSymbol(char symbol) {
+    ast_t *e = malloc(sizeof(ast_t));
+
+    e->type = NODE_SYMBOL;
+    e->op.symbol = symbol;
+
+    return e;
+}
+
+ast_t *ast_MakeUnary(enum _TokenType operator, ast_t *operand) {
+    ast_t *e = malloc(sizeof(ast_t));
+
+    e->type = NODE_UNARY;
+    e->op.unary.operator = operator;
+    e->op.unary.operand = operand;
+
+    return e;
+}
+
+ast_t *ast_MakeBinary(enum _TokenType operator, ast_t *left, ast_t *right) {
+    ast_t *e = malloc(sizeof(ast_t));
+
+    e->type = NODE_BINARY;
+    e->op.binary.left = left;
+    e->op.binary.right = right;
+
+    return e;
+}
+
+void ast_Cleanup(ast_t *e) {
+    if (e == NULL) return;
+
+    switch (e->type) {
+    case NODE_NUMBER:
+        num_Cleanup(e->op.number);
+        break;
+    case NODE_UNARY:
+        ast_Cleanup(e->op.unary.operand);
+        break;
+    case NODE_BINARY:
+        ast_Cleanup(e->op.binary.left);
+        ast_Cleanup(e->op.binary.right);
+        break;
+    }
+
+    free(e);
+}
+
+void tokenizer_Cleanup(tokenizer_t *t) {
+    unsigned i;
+    for(i = 0; i < t->amount; i++) {
+        if(t->tokens[i].type == TOK_NUMBER)
+            num_Cleanup(t->tokens[i].op.number);
+    }
+}
+
+void tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length) {
+
+}
+
+ast_t *parse(tokenizer_t *t) {
+    return NULL;
 }
