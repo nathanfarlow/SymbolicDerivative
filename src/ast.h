@@ -28,7 +28,7 @@ typedef struct _Node {
         num_t number;
 
         //NODE_SYMBOL
-        char symbol;
+        uint8_t symbol;
 
         //NODE_UNARY
         struct {
@@ -47,13 +47,14 @@ typedef struct _Node {
 } ast_t;
 
 ast_t *ast_MakeNumber(num_t num);
-ast_t *ast_MakeSymbol(char symbol);
+ast_t *ast_MakeSymbol(uint8_t symbol);
 ast_t *ast_MakeUnary(enum _TokenType operator, ast_t *operand);
 ast_t *ast_MakeBinary(enum _TokenType operator, ast_t *left, ast_t *right);
 
 void ast_Cleanup(ast_t *e);
 
 typedef enum _TokenType {
+
     //Numbers and symbols
     TOK_NUMBER, TOK_SYMBOL, //numbers, variables, pi, e, etc. Cannot be represented by identifier_t
 
@@ -62,15 +63,22 @@ typedef enum _TokenType {
     TOK_MULTIPLY, TOK_DIVIDE, //*, /
     TOK_FRACTION, //special '/' for ti pretty print
     TOK_NEGATE, //-
-    TOK_POWER, //^
+    TOK_POWER, TOK_RECRIPROCAL, TOK_SQUARE, TOK_CUBE, //^
 
     //Placeholders
     TOK_OPEN_PAR, TOK_CLOSE_PAR, //(, )
 
     //Functions
 
-    AMOUNT_TOKENS //used to automatically detect the size of our identifiers array, never used as a token
+    AMOUNT_TOKENS, //used to automatically detect the size of our identifiers array, never used as a token
+
+    TOK_ERROR
 } TokenType;
+
+//since 'e' uses an extension byte, we represent it as 0x01 in char symbol
+#define SYMBOL_E 0x01
+//represents an invalid symbol during parsing.
+#define SYMBOL_ERROR 0x00
 
 typedef struct _Token {
 
@@ -78,7 +86,7 @@ typedef struct _Token {
 
     union {
         num_t number; //for TOK_NUMBER
-        char symbol; //for TOK_SYMBOL
+        uint8_t symbol; //for TOK_SYMBOL
     } op;
 
 } token_t;
@@ -91,7 +99,7 @@ typedef struct _Tokenizer {
 
 void tokenizer_Cleanup(tokenizer_t *t);
 
-void tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length);
+int tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length);
 ast_t *parse(tokenizer_t *t);
 
 //there can be only 2 bytes, one is extended byte
