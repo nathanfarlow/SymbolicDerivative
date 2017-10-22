@@ -12,5 +12,5 @@
 #include "ast.h"
 
 void main(void) {
-	
+    
 }

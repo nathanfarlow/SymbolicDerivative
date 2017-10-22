@@ -5,9 +5,9 @@
 #define STACK_START 10
 
 typedef struct {
-	unsigned int _max;
-	unsigned int top;
-	void **items;
+    unsigned int _max;
+    unsigned int top;
+    void **items;
 } Stack;
 
 void stack_Create(Stack *s);

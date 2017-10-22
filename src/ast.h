@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 typedef struct _Num {
-	uint16_t length;
-	char *number;
+    uint16_t length;
+    char *number;
 } num_t;
 
 double num_ToDouble(num_t num);
@@ -14,35 +14,35 @@ num_t num_FromDouble(double d);
 void num_Cleanup(num_t num);
 
 typedef enum _NodeType {
-	NODE_NUMBER, NODE_SYMBOL, NODE_UNARY, NODE_BINARY
+    NODE_NUMBER, NODE_SYMBOL, NODE_UNARY, NODE_BINARY
 } NodeType;
 
 enum _TokenType;
 
 typedef struct _Node {
 
-	NodeType type;
+    NodeType type;
 
-	union {
-		//NODE_NUMBER
-		num_t number;
+    union {
+        //NODE_NUMBER
+        num_t number;
 
-		//NODE_SYMBOL
-		char symbol;
+        //NODE_SYMBOL
+        char symbol;
 
-		//NODE_UNARY
-		struct {
-			enum _TokenType operator;
-			struct _Node *operand;
-		} unary;
+        //NODE_UNARY
+        struct {
+            enum _TokenType operator;
+            struct _Node *operand;
+        } unary;
 
-		//NODE_BINARY
-		struct {
-			enum _TokenType operator;
-			struct _Node *left, *right;
-		} binary;
+        //NODE_BINARY
+        struct {
+            enum _TokenType operator;
+            struct _Node *left, *right;
+        } binary;
 
-	} op;
+    } op;
 
 } ast_t;
 
@@ -54,39 +54,39 @@ ast_t *ast_MakeBinary(enum _TokenType operator, ast_t *left, ast_t *right);
 void ast_Cleanup(ast_t *e);
 
 typedef enum _TokenType {
-	//Numbers and symbols
-	TOK_NUMBER, TOK_SYMBOL, //numbers, variables, pi, e, etc. Cannot be represented by identifier_t
+    //Numbers and symbols
+    TOK_NUMBER, TOK_SYMBOL, //numbers, variables, pi, e, etc. Cannot be represented by identifier_t
 
-	//Operators
-	TOK_ADD, TOK_SUBTRACT, //+, -
-	TOK_MULTIPLY, TOK_DIVIDE, //*, /
-	TOK_FRACTION, //special '/' for ti pretty print
-	TOK_NEGATE, //-
-	TOK_POWER, //^
+    //Operators
+    TOK_ADD, TOK_SUBTRACT, //+, -
+    TOK_MULTIPLY, TOK_DIVIDE, //*, /
+    TOK_FRACTION, //special '/' for ti pretty print
+    TOK_NEGATE, //-
+    TOK_POWER, //^
 
-	//Placeholders
-	TOK_OPEN_PAR, TOK_CLOSE_PAR, //(, )
+    //Placeholders
+    TOK_OPEN_PAR, TOK_CLOSE_PAR, //(, )
 
-	//Functions
+    //Functions
 
-	AMOUNT_TOKENS //used to automatically detect the size of our identifiers array, never used as a token
+    AMOUNT_TOKENS //used to automatically detect the size of our identifiers array, never used as a token
 } TokenType;
 
 typedef struct _Token {
 
-	TokenType type;
+    TokenType type;
 
-	union {
-		num_t number; //for TOK_NUMBER
-		char symbol; //for TOK_SYMBOL
-	} op;
+    union {
+        num_t number; //for TOK_NUMBER
+        char symbol; //for TOK_SYMBOL
+    } op;
 
 } token_t;
 
 
 typedef struct _Tokenizer {
-	unsigned amount;
-	token_t *tokens;
+    unsigned amount;
+    token_t *tokens;
 } tokenizer_t;
 
 void tokenizer_Cleanup(tokenizer_t *t);
@@ -100,11 +100,11 @@ ast_t *parse(tokenizer_t *t);
 //used to read bytes from yvar into tokens
 typedef struct _Identifier {
 
-	NodeType node_type;
-	TokenType token_type;
+    NodeType node_type;
+    TokenType token_type;
 
-	uint8_t length;
-	uint8_t bytes[IDENTIFIER_MAX_BYTES];
+    uint8_t length;
+    uint8_t bytes[IDENTIFIER_MAX_BYTES];
 
 } identifier_t;
 
