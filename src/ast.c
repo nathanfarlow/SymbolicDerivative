@@ -73,6 +73,14 @@ num_t num_FromDouble(double d) {
     return ret;
 }
 
+num_t num_Copy(num_t num) {
+    num_t ret;
+    ret.length = num.length;
+    ret.number = malloc(ret.length);
+    memcpy(ret.number, num.number, ret.length);
+    return ret;
+}
+
 void num_Cleanup(num_t num) {
     if(num.number != NULL) {
         free(num.number);
@@ -112,6 +120,7 @@ ast_t *ast_MakeBinary(enum _TokenType operator, ast_t *left, ast_t *right) {
     ast_t *e = malloc(sizeof(ast_t));
 
     e->type = NODE_BINARY;
+    e->op.binary.operator = operator;
     e->op.binary.left = left;
     e->op.binary.right = right;
 
@@ -315,14 +324,14 @@ uint8_t precedence(TokenType type) {
 
 void collapse_precedence(stack_t *operators, stack_t *expressions, TokenType type) {
     while(operators->top > 0
-        && (type == TOK_CLOSE_PAR && ((token_t*)stack_Peek(operators))->type != TOK_OPEN_PAR)
-        || (type != TOK_CLOSE_PAR && precedence(((token_t*)stack_Peek(operators))->type) >= precedence(type))) {
+        && ((type == TOK_CLOSE_PAR && ((token_t*)stack_Peek(operators))->type != TOK_OPEN_PAR)
+        || (type != TOK_CLOSE_PAR && precedence(((token_t*)stack_Peek(operators))->type) >= precedence(type)))) {
 
         token_t *op = stack_Pop(operators);
 
         if(identifiers[op->type].node_type == NODE_BINARY) {
             ast_t *e2 = stack_Pop(expressions);
-            ast_t *e1 = stack_Pop(operators);
+            ast_t *e1 = stack_Pop(expressions);
 
             stack_Push(expressions, ast_MakeBinary(op->type, e1, e2));
         } else if(identifiers[op->type].node_type == NODE_UNARY) {
@@ -364,14 +373,30 @@ ast_t *parse(tokenizer_t *t, int *error) {
                 *error = -1;
                 return NULL;
             }
-        } else if(tok->type == TOK_NUMBER || tok->type == TOK_SYMBOL) {
-            stack_Push(&expressions, tok->type == TOK_NUMBER ? ast_MakeNumber(tok->op.number) : ast_MakeSymbol(tok->op.symbol));
 
+            //detect if we are multiplying without the *
+            if (i + 1 < t->amount) {
+                token_t *next = &t->tokens[i + 1];
+
+                if (!is_tok_binary_operator(next->type) &&
+                    (!is_tok_unary_operator(next->type) || (is_tok_unary_operator(next->type) && identifiers[next->type].direction == LEFT))
+                    && next->type != TOK_CLOSE_PAR) {
+
+                    collapse_precedence(&operators, &expressions, TOK_MULTIPLY);
+
+                    stack_Push(&operators, &mult);
+                }
+            }
+        } else if(tok->type == TOK_NUMBER || tok->type == TOK_SYMBOL) {
+            stack_Push(&expressions, tok->type == TOK_NUMBER ? ast_MakeNumber(num_Copy(tok->op.number)) : ast_MakeSymbol(tok->op.symbol));
+
+            //detect if we are multiplying without the *
             if(i + 1 < t->amount) {
                 token_t *next = &t->tokens[i + 1];
 
                 if(!is_tok_binary_operator(next->type) &&
-                    (!is_tok_unary_operator(next->type) || (is_tok_unary_operator(next->type) && identifiers[next->type].direction == LEFT))) {
+                    (!is_tok_unary_operator(next->type) || (is_tok_unary_operator(next->type) && identifiers[next->type].direction == LEFT))
+                    && next->type != TOK_CLOSE_PAR) {
 
                     collapse_precedence(&operators, &expressions, TOK_MULTIPLY);
 
@@ -380,10 +405,10 @@ ast_t *parse(tokenizer_t *t, int *error) {
             }
 
         } else if(is_tok_unary_operator(tok->type)) {
-            stack_Push(&expressions, tok);
+            stack_Push(&operators, tok);
         } else if(is_tok_binary_operator(tok->type)) {
-            collapse_precedence(&operators);
-            stack_Push(&expressions, tok);
+            collapse_precedence(&operators, &expressions, tok->type);
+            stack_Push(&operators, tok);
         } else if(is_tok_unary_function(tok->type)) {
 
         } else if(is_tok_binary_function(tok->type)) {

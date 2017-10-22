@@ -11,6 +11,8 @@ typedef struct _Num {
 double num_ToDouble(num_t num);
 num_t num_FromDouble(double d);
 
+num_t num_Copy(num_t num);
+
 void num_Cleanup(num_t num);
 
 typedef enum _NodeType {
