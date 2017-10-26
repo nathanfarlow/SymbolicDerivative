@@ -163,6 +163,8 @@ void tokenizer_Cleanup(tokenizer_t *t) {
 #define is_tok_binary_function(tok) (tok == TOK_LOG_BASE)
 #define is_tok_unary_function(tok) (tok >= TOK_INT && tok <= TOK_TANH_INV)
 
+#define is_tok_function(tok) (is_tok_unary_function(tok) || is_tok_binary_function(tok))
+
 //algorithm that returns a token by using the identifiers array
 TokenType read_identifier(const uint8_t *equation, unsigned index, unsigned length) {
     unsigned identifier_index;
@@ -322,7 +324,7 @@ uint8_t precedence(TokenType type) {
     }
 }
 
-void collapse_precedence(stack_t *operators, stack_t *expressions, TokenType type) {
+int collapse_precedence(stack_t *operators, stack_t *expressions, TokenType type) {
     while(operators->top > 0
         && ((type == TOK_CLOSE_PAR && ((token_t*)stack_Peek(operators))->type != TOK_OPEN_PAR)
         || (type == TOK_COMMA && !is_tok_binary_function(((token_t*)stack_Peek(operators))->type))
@@ -334,23 +336,33 @@ void collapse_precedence(stack_t *operators, stack_t *expressions, TokenType typ
             ast_t *e2 = stack_Pop(expressions);
             ast_t *e1 = stack_Pop(expressions);
 
+            if (e1 == NULL || e1 == NULL)
+                return -1;
+
             stack_Push(expressions, ast_MakeBinary(op->type, e1, e2));
         } else if(identifiers[op->type].node_type == NODE_UNARY) {
             ast_t *e = stack_Pop(expressions);
 
+            if (e == NULL)
+                return -1;
+
             stack_Push(expressions, ast_MakeUnary(op->type, e));
         }
     }
+
+    return 0;
 }
 
-void collapse(stack_t *operators, stack_t *expressions) {
-    collapse_precedence(operators, expressions, 0);
+int collapse(stack_t *operators, stack_t *expressions) {
+    return collapse_precedence(operators, expressions, 0);
 }
 
 //Whether or not we should insert a multiply operator for a symbol/number with the next token. For example: 5(2 + 3) and 5x
 #define should_multiply_by_next_token(next) (!is_tok_binary_operator(next->type) \
                                             && (!is_tok_unary_operator(next->type) || (is_tok_unary_operator(next->type) && identifiers[next->type].direction == LEFT)) \
                                             && next->type != TOK_CLOSE_PAR && next->type != TOK_COMMA)
+
+#define parse_assert(expression, e) if(!(expression)) {stack_Cleanup(&operators); stack_Cleanup(&expressions); *error = e; return NULL;}
 
 ast_t *parse(tokenizer_t *t, int *error) {
     stack_t operators, expressions;
@@ -375,7 +387,7 @@ ast_t *parse(tokenizer_t *t, int *error) {
                 token_t *next = &t->tokens[i + 1];
 
                 if(should_multiply_by_next_token(next)) {
-                    collapse_precedence(&operators, &expressions, TOK_MULTIPLY);
+                    parse_assert(collapse_precedence(&operators, &expressions, TOK_MULTIPLY) == 0, -1);
                     stack_Push(&operators, &mult);
                 }
             }
@@ -383,40 +395,35 @@ ast_t *parse(tokenizer_t *t, int *error) {
         } else if(is_tok_unary_operator(tok->type)) {
             stack_Push(&operators, tok);
         } else if(is_tok_binary_operator(tok->type)) {
-            collapse_precedence(&operators, &expressions, tok->type);
+            parse_assert(collapse_precedence(&operators, &expressions, tok->type) == 0, -1);
             stack_Push(&operators, tok);
-        } else if(is_tok_unary_function(tok->type) || is_tok_binary_function(tok->type)) {
+        } else if(is_tok_function(tok->type)) {
             //insert a ( to correspond with the other closing ) following the parameters
             stack_Push(&operators, &open_par);
             stack_Push(&operators, tok);
         } else if(tok->type == TOK_CLOSE_PAR) {
-            collapse_precedence(&operators, &expressions, TOK_CLOSE_PAR);
+            parse_assert(collapse_precedence(&operators, &expressions, TOK_CLOSE_PAR) == 0, -1);
+            parse_assert(operators.top > 0 && ((token_t*)stack_Peek(&operators))->type == TOK_OPEN_PAR, -1);
 
-            if (operators.top > 0 && ((token_t*)stack_Peek(&operators))->type == TOK_OPEN_PAR) {
-                stack_Pop(&operators);
-            }
-            else {
-                //unbalanced )
-                *error = -1;
-                return NULL;
-            }
+            stack_Pop(&operators);
 
             //detect if we are multiplying without the *
             if (i + 1 < t->amount) {
                 token_t *next = &t->tokens[i + 1];
 
                 if (should_multiply_by_next_token(next)) {
-                    collapse_precedence(&operators, &expressions, TOK_MULTIPLY);
+                    parse_assert(collapse_precedence(&operators, &expressions, TOK_MULTIPLY) == 0, -1);
                     stack_Push(&operators, &mult);
                 }
             }
 
         } else if(tok->type == TOK_COMMA) {
-            collapse_precedence(&operators, &expressions, TOK_COMMA);
+            parse_assert(collapse_precedence(&operators, &expressions, TOK_COMMA) == 0, -1);
+            parse_assert(operators.top > 0 && is_tok_function(((token_t*)stack_Peek(&operators))->type), -1);
         }
     }
 
-    collapse(&operators, &expressions);
+    parse_assert(collapse(&operators, &expressions) == 0, -1);
 
     root = stack_Pop(&expressions);
 
