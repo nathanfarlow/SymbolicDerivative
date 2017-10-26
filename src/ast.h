@@ -115,8 +115,18 @@ typedef struct _Tokenizer {
 
 void tokenizer_Cleanup(tokenizer_t *t);
 
-int tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length);
-ast_t *parse(tokenizer_t *t, int *error);
+typedef enum _Error {
+    E_SUCCESS,
+
+    E_TOK_UNIDENTIFIED,
+
+    E_PARSE_BAD_OPERATOR,
+    E_PARSE_BAD_COMMA,
+    E_PARSE_UNMATCHED_CLOSE_PAR
+} Error;
+
+Error tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length);
+ast_t *parse(tokenizer_t *t, Error *error);
 
 //there can be only 2 bytes, one is extended byte
 #define IDENTIFIER_MAX_BYTES 2
