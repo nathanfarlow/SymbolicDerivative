@@ -28,14 +28,14 @@ int main(int argc, const char **argv) {
     error = tokenize(&t, yvar.data, yvar.yvar_data_len);
 
     if (error != 0) {
-        printf("Syntax error: unable to tokenize yvar.");
+        printf("Syntax error: unable to tokenize yvar.\n");
         return -1;
     }
 
     ast_t *e = parse(&t, &error);
 
     if (error != 0) {
-        printf("Syntax error: unable to parse ast.");
+        printf("Syntax error: unable to parse ast.\n");
         return -1;
     }
     
