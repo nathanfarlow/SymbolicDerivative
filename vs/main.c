@@ -8,7 +8,6 @@ int main(int argc, const char **argv) {
 
     if (argc <= 1) {
         printf("Usage: derivative.exe C:\\path\\to\\yvar.8xy\n");
-        getchar();
         return -1;
     }
 
@@ -16,14 +15,12 @@ int main(int argc, const char **argv) {
 
     if (!file) {
         printf("File not found.\n");
-        getchar();
         return -1;
     }
 
     yvar_t yvar;
     if (yvar_Read(&yvar, file) != 0) {
         printf("Corrupt or invalid 8xy file.\n");
-        getchar();
         return -1;
     }
 
@@ -32,7 +29,6 @@ int main(int argc, const char **argv) {
 
     if (error != 0) {
         printf("Syntax error: unable to tokenize yvar.");
-        getchar();
         return -1;
     }
 
@@ -40,7 +36,6 @@ int main(int argc, const char **argv) {
 
     if (error != 0) {
         printf("Syntax error: unable to parse ast.");
-        getchar();
         return -1;
     }
     
@@ -49,8 +44,6 @@ int main(int argc, const char **argv) {
 
     yvar_Cleanup(&yvar);
     fclose(file);
-
-    getchar();
 
     return 0;
 }

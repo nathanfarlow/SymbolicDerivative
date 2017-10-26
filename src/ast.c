@@ -8,48 +8,48 @@
 #include "stack.h"
 
 identifier_t identifiers[AMOUNT_TOKENS] = {
-    {NODE_NUMBER, TOK_NUMBER, NONE, 0, 0},
-    {NODE_SYMBOL, TOK_SYMBOL, NONE, 0, 0},
+    {NODE_NUMBER, TOK_NUMBER, NONE, 0, {0}},
+    {NODE_SYMBOL, TOK_SYMBOL, NONE, 0, {0}},
 
-    {NODE_BINARY, TOK_ADD, NONE, 1, 0x70},
-    {NODE_BINARY, TOK_SUBTRACT, NONE, 1, 0x71},
-    {NODE_BINARY, TOK_MULTIPLY, NONE, 1, 0x82},
-    {NODE_BINARY, TOK_DIVIDE, NONE, 1, 0x83},
+    {NODE_BINARY, TOK_ADD, NONE, 1, {0x70}},
+    {NODE_BINARY, TOK_SUBTRACT, NONE, 1, {0x71}},
+    {NODE_BINARY, TOK_MULTIPLY, NONE, 1, {0x82}},
+    {NODE_BINARY, TOK_DIVIDE, NONE, 1, {0x83}},
     {NODE_BINARY, TOK_FRACTION, NONE, 2, {0xEF, 0x2E}},
-    {NODE_BINARY, TOK_POWER, NONE, 1, 0xF0},
-    {NODE_BINARY, TOK_ROOT, NONE, 1, 0xF1},
+    {NODE_BINARY, TOK_POWER, NONE, 1, {0xF0}},
+    {NODE_BINARY, TOK_ROOT, NONE, 1, {0xF1}},
 
-    {NODE_UNARY, TOK_NEGATE, LEFT, 1, 0xB0},
-    {NODE_UNARY, TOK_RECRIPROCAL, RIGHT, 1, 0x0C},
-    {NODE_UNARY, TOK_SQUARE, RIGHT, 1, 0x0D},
-    {NODE_UNARY, TOK_CUBE, RIGHT, 1, 0x0F},
+    {NODE_UNARY, TOK_NEGATE, LEFT, 1, {0xB0}},
+    {NODE_UNARY, TOK_RECRIPROCAL, RIGHT, 1, {0x0C}},
+    {NODE_UNARY, TOK_SQUARE, RIGHT, 1, {0x0D}},
+    {NODE_UNARY, TOK_CUBE, RIGHT, 1, {0x0F}},
 
     {NODE_BINARY, TOK_LOG_BASE, NONE, 2, {0xEF, 0x34}}, //first param = value, second = base
 
-    {NODE_UNARY, TOK_INT, NONE, 1, 0xB1},
-    {NODE_UNARY, TOK_ABS, NONE, 1, 0xB2},
-    {NODE_UNARY, TOK_SQRT, NONE, 1, 0xBC},
-    {NODE_UNARY, TOK_CUBED_ROOT, NONE, 1, 0xBD},
-    {NODE_UNARY, TOK_LN, NONE, 1, 0xBE},
-    {NODE_UNARY, TOK_E_TO_POWER, NONE, 1, 0xBF},
+    {NODE_UNARY, TOK_INT, NONE, 1, {0xB1}},
+    {NODE_UNARY, TOK_ABS, NONE, 1, {0xB2}},
+    {NODE_UNARY, TOK_SQRT, NONE, 1, {0xBC}},
+    {NODE_UNARY, TOK_CUBED_ROOT, NONE, 1, {0xBD}},
+    {NODE_UNARY, TOK_LN, NONE, 1, {0xBE}},
+    {NODE_UNARY, TOK_E_TO_POWER, NONE, 1, {0xBF}},
     {NODE_UNARY, TOK_LOG, NONE, 1, 0xC0},
-    {NODE_UNARY, TOK_10_TO_POWER, NONE, 1, 0xC1},
-    {NODE_UNARY, TOK_SIN, NONE, 1, 0xC2},
-    {NODE_UNARY, TOK_SIN_INV, NONE, 1, 0xC3},
-    {NODE_UNARY, TOK_COS, NONE, 1, 0xC4},
-    {NODE_UNARY, TOK_COS_INV, NONE, 1, 0xC5},
-    {NODE_UNARY, TOK_TAN, NONE, 1, 0xC6},
-    {NODE_UNARY, TOK_TAN_INV, NONE, 1, 0xC7},
-    {NODE_UNARY, TOK_SINH, NONE, 1, 0xC8},
-    {NODE_UNARY, TOK_SINH_INV, NONE, 1, 0xC9},
-    {NODE_UNARY, TOK_COSH, NONE, 1, 0xCA},
-    {NODE_UNARY, TOK_COSH_INV, NONE, 1, 0xCB},
-    {NODE_UNARY, TOK_TANH, NONE, 1, 0xCC},
-    {NODE_UNARY, TOK_TANH_INV, NONE, 1, 0xCD},
+    {NODE_UNARY, TOK_10_TO_POWER, NONE, 1, {0xC1}},
+    {NODE_UNARY, TOK_SIN, NONE, 1, {0xC2}},
+    {NODE_UNARY, TOK_SIN_INV, NONE, 1, {0xC3}},
+    {NODE_UNARY, TOK_COS, NONE, 1, {0xC4}},
+    {NODE_UNARY, TOK_COS_INV, NONE, 1, {0xC5}},
+    {NODE_UNARY, TOK_TAN, NONE, 1, {0xC6}},
+    {NODE_UNARY, TOK_TAN_INV, NONE, 1, {0xC7}},
+    {NODE_UNARY, TOK_SINH, NONE, 1, {0xC8}},
+    {NODE_UNARY, TOK_SINH_INV, NONE, 1, {0xC9}},
+    {NODE_UNARY, TOK_COSH, NONE, 1, {0xCA}},
+    {NODE_UNARY, TOK_COSH_INV, NONE, 1, {0xCB}},
+    {NODE_UNARY, TOK_TANH, NONE, 1, {0xCC}},
+    {NODE_UNARY, TOK_TANH_INV, NONE, 1, {0xCD}},
 
-    {-1, TOK_OPEN_PAR, NONE, 1, 0x10},
-    {-1, TOK_CLOSE_PAR, NONE, 1, 0x11},
-    {-1, TOK_COMMA, NONE, 1, 0x2B}
+    {-1, TOK_OPEN_PAR, NONE, 1, {0x10}},
+    {-1, TOK_CLOSE_PAR, NONE, 1, {0x11}},
+    {-1, TOK_COMMA, NONE, 1, {0x2B}}
 };
 
 double num_ToDouble(num_t num) {
@@ -106,7 +106,7 @@ ast_t *ast_MakeSymbol(uint8_t symbol) {
     return e;
 }
 
-ast_t *ast_MakeUnary(enum _TokenType operator, ast_t *operand) {
+ast_t *ast_MakeUnary(TokenType operator, ast_t *operand) {
     ast_t *e = malloc(sizeof(ast_t));
 
     e->type = NODE_UNARY;
@@ -116,7 +116,7 @@ ast_t *ast_MakeUnary(enum _TokenType operator, ast_t *operand) {
     return e;
 }
 
-ast_t *ast_MakeBinary(enum _TokenType operator, ast_t *left, ast_t *right) {
+ast_t *ast_MakeBinary(TokenType operator, ast_t *left, ast_t *right) {
     ast_t *e = malloc(sizeof(ast_t));
 
     e->type = NODE_BINARY;

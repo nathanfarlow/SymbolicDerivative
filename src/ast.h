@@ -19,42 +19,6 @@ typedef enum _NodeType {
     NODE_NUMBER, NODE_SYMBOL, NODE_UNARY, NODE_BINARY
 } NodeType;
 
-enum _TokenType;
-
-typedef struct _Node {
-
-    NodeType type;
-
-    union {
-        //NODE_NUMBER
-        num_t number;
-
-        //NODE_SYMBOL
-        uint8_t symbol;
-
-        //NODE_UNARY
-        struct {
-            enum _TokenType operator;
-            struct _Node *operand;
-        } unary;
-
-        //NODE_BINARY
-        struct {
-            enum _TokenType operator;
-            struct _Node *left, *right;
-        } binary;
-
-    } op;
-
-} ast_t;
-
-ast_t *ast_MakeNumber(num_t num);
-ast_t *ast_MakeSymbol(uint8_t symbol);
-ast_t *ast_MakeUnary(enum _TokenType operator, ast_t *operand);
-ast_t *ast_MakeBinary(enum _TokenType operator, ast_t *left, ast_t *right);
-
-void ast_Cleanup(ast_t *e);
-
 typedef enum _TokenType {
 
     //Numbers and symbols
@@ -74,8 +38,8 @@ typedef enum _TokenType {
     TOK_LOG_BASE,
 
     //Unary functions
-    TOK_INT, TOK_ABS, 
-    TOK_SQRT, TOK_CUBED_ROOT, 
+    TOK_INT, TOK_ABS,
+    TOK_SQRT, TOK_CUBED_ROOT,
     TOK_LN, TOK_E_TO_POWER,
     TOK_LOG, TOK_10_TO_POWER,
     TOK_SIN, TOK_SIN_INV,
@@ -84,7 +48,7 @@ typedef enum _TokenType {
     TOK_SINH, TOK_SINH_INV,
     TOK_COSH, TOK_COSH_INV,
     TOK_TANH, TOK_TANH_INV,
-    
+
     //Placeholders
     TOK_OPEN_PAR, TOK_CLOSE_PAR, TOK_COMMA,
 
@@ -92,6 +56,40 @@ typedef enum _TokenType {
 
     TOK_ERROR
 } TokenType;
+
+typedef struct _Node {
+
+    NodeType type;
+
+    union {
+        //NODE_NUMBER
+        num_t number;
+
+        //NODE_SYMBOL
+        uint8_t symbol;
+
+        //NODE_UNARY
+        struct {
+            TokenType operator;
+            struct _Node *operand;
+        } unary;
+
+        //NODE_BINARY
+        struct {
+            TokenType operator;
+            struct _Node *left, *right;
+        } binary;
+
+    } op;
+
+} ast_t;
+
+ast_t *ast_MakeNumber(num_t num);
+ast_t *ast_MakeSymbol(uint8_t symbol);
+ast_t *ast_MakeUnary(TokenType operator, ast_t *operand);
+ast_t *ast_MakeBinary(TokenType operator, ast_t *left, ast_t *right);
+
+void ast_Cleanup(ast_t *e);
 
 //since 'e' uses an extension byte, we represent it as 0x01 in char symbol
 #define SYMBOL_E 0x01
