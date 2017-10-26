@@ -93,6 +93,10 @@ void ast_Cleanup(ast_t *e);
 
 //since 'e' uses an extension byte, we represent it as 0x01 in char symbol
 #define SYMBOL_E 0x01
+#define SYMBOL_PI 0xAC
+#define SYMBOL_THETA 0x5B
+//the other symbols are represented by their ascii code
+
 //represents an invalid symbol during parsing.
 #define SYMBOL_ERROR 0x00
 
@@ -127,6 +131,10 @@ typedef enum _Error {
 
 Error tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length);
 ast_t *parse(tokenizer_t *t, Error *error);
+
+//a way to test if functions are parsed correctly
+//default variable = the number to plug in for any encountered variable
+double evaluate(ast_t *e, double default_symbol);
 
 //there can be only 2 bytes, one is extended byte
 #define IDENTIFIER_MAX_BYTES 2

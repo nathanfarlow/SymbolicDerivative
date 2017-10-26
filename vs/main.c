@@ -38,6 +38,8 @@ int main(int argc, const char **argv) {
         printf("Syntax error: unable to parse ast.\n");
         return -1;
     }
+
+    printf("%.17g\n", evaluate(e, 0));
     
     ast_Cleanup(e);
     tokenizer_Cleanup(&t);

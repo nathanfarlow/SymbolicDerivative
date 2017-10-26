@@ -1,9 +1,15 @@
 #include "ast.h"
 
+#ifdef _WIN32
+#define _USE_MATH_DEFINES
+#endif
+
 #include <stdbool.h>//for bool
 #include <stdlib.h> //for malloc
 #include <string.h> //for memcpy
 #include <stdio.h> //for sprintf
+
+#include <math.h>
 
 #include "stack.h"
 
@@ -65,7 +71,7 @@ num_t num_FromDouble(double d) {
 
     sprintf(buffer, "%.17g", d);
     
-    ret.length = strlen(buffer);
+    ret.length = (uint16_t)strlen(buffer);
     ret.number = malloc(ret.length);
 
     memcpy(ret.number, buffer, ret.length);
@@ -154,8 +160,10 @@ void tokenizer_Cleanup(tokenizer_t *t) {
     }
 }
 
-#define is_num(byte) (byte >= 0x30 && byte <= 0x3A) /*'0' through '.'*/
-#define is_one_byte_symbol(byte) ((byte >= 0x41 && byte <= 0x5B) || byte ==  0xAC) /*A through Z, theta, pi. does not include 'e'*/
+#define CHAR_PERIOD 0x3A
+
+#define is_num(byte) ((byte >= 0x30 && byte <= 0x39) || byte == CHAR_PERIOD) /*'0' through '.'*/
+#define is_one_byte_symbol(byte) ((byte >= 'A' && byte <= 'Z') || byte == SYMBOL_THETA || byte ==  SYMBOL_PI) /*A through Z, theta, pi. does not include 'e'*/
 
 #define is_tok_binary_operator(tok) (tok >= TOK_ADD && tok <= TOK_CUBE)
 #define is_tok_unary_operator(tok) (tok >= TOK_NEGATE && tok <= TOK_CUBE)
@@ -207,7 +215,10 @@ num_t read_num(const uint8_t *equation, unsigned index, unsigned length) {
 
     num.length = size;
     num.number = malloc(size);
-    memcpy(num.number, equation + index, size);
+    
+    for (i = 0; i < size; i++) {
+        num.number[i] = equation[i + index] == CHAR_PERIOD ? '.' : equation[i + index];
+    }
 
     return num;
 }
@@ -314,9 +325,8 @@ uint8_t precedence(TokenType type) {
         return 10;
     case TOK_POWER: case TOK_RECRIPROCAL:
     case TOK_SQUARE: case TOK_CUBE:
+    case TOK_ROOT:
         return 15;
-    case TOK_OPEN_PAR: case TOK_CLOSE_PAR:
-        return 0;
     default:
         return 0;
     }
@@ -394,6 +404,18 @@ ast_t *parse(tokenizer_t *t, Error *error) {
 
         } else if(is_tok_unary_operator(tok->type)) {
             stack_Push(&operators, tok);
+
+            //detect if we are multiplying without the *
+            if (identifiers[tok->type].direction == RIGHT) {
+                if (i + 1 < t->amount) {
+                    token_t *next = &t->tokens[i + 1];
+
+                    if (should_multiply_by_next_token(next)) {
+                        parse_assert(collapse_precedence(&operators, &expressions, TOK_MULTIPLY), E_PARSE_BAD_OPERATOR);
+                        stack_Push(&operators, &mult);
+                    }
+                }
+            }
         } else if(is_tok_binary_operator(tok->type)) {
             parse_assert(collapse_precedence(&operators, &expressions, tok->type), E_PARSE_BAD_OPERATOR);
             stack_Push(&operators, tok);
@@ -431,4 +453,90 @@ ast_t *parse(tokenizer_t *t, Error *error) {
     stack_Cleanup(&expressions);
 
     return root;
+}
+
+double asinh(double x) {
+    return log(x + sqrt(1 + pow(x, 2))) / log(M_E);
+}
+
+double acosh(double x) {
+    return 2 * log(sqrt((x + 1) / 2) + sqrt((x - 1) / 2));
+}
+
+double atanh(double x) {
+    return (log(1 + x) - log(1 - x)) / 2;
+}
+
+double evaluate(ast_t *e, double default_symbol) {
+    switch (e->type) {
+    case NODE_NUMBER:
+        return num_ToDouble(e->op.number);
+        break;
+    case NODE_SYMBOL:
+        switch (e->op.symbol) {
+        case SYMBOL_E:
+            return M_E;
+            break;
+        case SYMBOL_PI:
+            return M_PI;
+            break;
+        default:
+            return default_symbol;
+        }
+        break;
+    case NODE_UNARY: {
+        double x = evaluate(e->op.unary.operand, default_symbol);
+
+        switch (e->op.unary.operator) {
+        case TOK_NEGATE: return -1 * x;
+        case TOK_RECRIPROCAL: return 1 / x;
+        case TOK_SQUARE: return pow(x, 2);
+        case TOK_CUBE: return pow(x, 3);
+
+        case TOK_INT: return (int)x;
+        case TOK_ABS: return fabs(x);
+
+        case TOK_SQRT: return sqrt(x);
+        case TOK_CUBED_ROOT: return pow(x, 1/3); break;
+
+        case TOK_LN: return log(x) / log(M_E);
+        case TOK_E_TO_POWER: return pow(M_E, x);
+        case TOK_LOG: return log(x) / log(10);
+        case TOK_10_TO_POWER: return pow(10, x);
+
+        case TOK_SIN: return sin(x);
+        case TOK_SIN_INV: return asin(x);
+        case TOK_COS: return cos(x);
+        case TOK_COS_INV: return acos(x);
+        case TOK_TAN: return tan(x);
+        case TOK_TAN_INV: return atan(x);
+        case TOK_SINH: return sinh(x);
+        case TOK_SINH_INV: return asinh(x);
+        case TOK_COSH: return cosh(x);
+        case TOK_COSH_INV: return acosh(x);
+        case TOK_TANH: return tanh(x);
+        case TOK_TANH_INV: return atanh(x);
+        }
+        break;
+    } case NODE_BINARY: {
+        double left, right;
+        left = evaluate(e->op.binary.left, default_symbol);
+        right = evaluate(e->op.binary.right, default_symbol);
+
+        switch (e->op.binary.operator) {
+        case TOK_ADD: return left + right;
+        case TOK_SUBTRACT: return left - right;
+        case TOK_MULTIPLY: return left * right;
+        case TOK_DIVIDE: return left / right;
+        case TOK_FRACTION: return left / right;
+        case TOK_POWER: return pow(left, right);
+        case TOK_ROOT: return pow(right, 1 / left);
+
+        case TOK_LOG_BASE: return log(left) / log(right);
+        }
+        break;
+    }
+    }
+
+    return -1;
 }
