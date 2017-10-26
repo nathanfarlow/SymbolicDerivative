@@ -4,7 +4,6 @@
 #define _USE_MATH_DEFINES
 #endif
 
-#include <stdbool.h>//for bool
 #include <stdlib.h> //for malloc
 #include <string.h> //for memcpy
 #include <stdio.h> //for sprintf
@@ -87,6 +86,16 @@ num_t num_Copy(num_t num) {
     return ret;
 }
 
+bool num_IsInteger(num_t num) {
+    unsigned i;
+    //doesn't matter if . is at the end of the number
+    for (i = 0; i < num.length - 1; i++) {
+        if (num.number[i] == '.')
+            return false;
+    }
+    return true;
+}
+
 void num_Cleanup(num_t num) {
     if(num.number != NULL) {
         free(num.number);
@@ -131,6 +140,32 @@ ast_t *ast_MakeBinary(TokenType operator, ast_t *left, ast_t *right) {
     e->op.binary.right = right;
 
     return e;
+}
+
+ast_t *ast_Copy(ast_t *e) {
+    ast_t *ret = malloc(sizeof(ast_t));
+
+    ret->type = e->type;
+
+    switch (ret->type) {
+    case NODE_NUMBER:
+        ret->op.number = num_Copy(e->op.number);
+        break;
+    case NODE_SYMBOL:
+        ret->op.symbol = e->op.symbol;
+        break;
+    case NODE_UNARY:
+        ret->op.unary.operator = e->op.unary.operator;
+        ret->op.unary.operand = ast_Copy(e->op.unary.operand);
+        break;
+    case NODE_BINARY:
+        ret->op.binary.operator = e->op.binary.operator;
+        ret->op.binary.left = ast_Copy(e->op.binary.left);
+        ret->op.binary.right = ast_Copy(e->op.binary.right);
+        break;
+    }
+
+    return ret;
 }
 
 void ast_Cleanup(ast_t *e) {
@@ -453,6 +488,83 @@ ast_t *parse(tokenizer_t *t, Error *error) {
     stack_Cleanup(&expressions);
 
     return root;
+}
+
+ast_t *simplify(ast_t *e) {
+    return NULL;
+}
+
+ast_t *derivative(ast_t *e) {
+
+    switch (e->type) {
+    case NODE_NUMBER:
+        return ast_MakeNumber(num_FromDouble(0));
+    case NODE_SYMBOL:
+        if(e->op.symbol == SYMBOL_PI
+            || e->op.symbol == SYMBOL_E)
+            return ast_MakeNumber(num_FromDouble(0));
+        return ast_MakeNumber(num_FromDouble(1));
+    case NODE_UNARY:
+        return 0;
+    case NODE_BINARY: {
+        ast_t *left, *right;
+
+        left = e->op.binary.left;
+        right = e->op.binary.right;
+
+        //https://www.mathsisfun.com/calculus/derivatives-rules.html
+        switch (e->op.binary.operator) {
+        case TOK_ADD:
+            return ast_MakeBinary(TOK_ADD, derivative(left), derivative(right));
+        case TOK_SUBTRACT:
+            return ast_MakeBinary(TOK_SUBTRACT, derivative(left), derivative(right));
+        case TOK_MULTIPLY:
+            return ast_MakeBinary(TOK_ADD,
+                ast_MakeBinary(TOK_MULTIPLY, ast_Copy(left), derivative(right)),
+                ast_MakeBinary(TOK_MULTIPLY, derivative(left), ast_Copy(right)));
+        case TOK_DIVIDE:
+        case TOK_FRACTION:
+            return ast_MakeBinary(TOK_FRACTION,
+                ast_MakeBinary(TOK_SUBTRACT,
+                    ast_MakeBinary(TOK_MULTIPLY,
+                        derivative(left),
+                        ast_Copy(right)), 
+                    ast_MakeBinary(TOK_MULTIPLY,
+                        derivative(right),
+                        ast_Copy(left))),
+                ast_MakeUnary(TOK_SQUARE, ast_Copy(right)));
+        case TOK_POWER:
+            return ast_MakeBinary(TOK_MULTIPLY,
+                ast_Copy(right),
+                ast_MakeBinary(TOK_POWER,
+                    ast_Copy(left),
+                    ast_MakeBinary(TOK_SUBTRACT,
+                        ast_Copy(right),
+                        ast_MakeNumber(num_FromDouble(1)))));
+        case TOK_ROOT: {
+
+            ast_t *ed = ast_MakeBinary(TOK_MULTIPLY,
+                ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(num_FromDouble(1)),
+                    ast_Copy(left)),
+                ast_MakeBinary(TOK_POWER,
+                    ast_Copy(right),
+                    ast_MakeBinary(TOK_SUBTRACT,
+                        ast_MakeBinary(TOK_FRACTION,
+                            ast_MakeNumber(num_FromDouble(1)),
+                            ast_Copy(left)),
+                        ast_MakeNumber(num_FromDouble(1)))));
+
+            return ed;
+
+        } case TOK_LOG_BASE:
+            break;
+        }
+
+    }
+    }
+
+    return NULL;
 }
 
 double asinh(double x) {

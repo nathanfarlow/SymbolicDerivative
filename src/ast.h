@@ -2,6 +2,7 @@
 #define _AST_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct _Num {
     uint16_t length;
@@ -10,8 +11,9 @@ typedef struct _Num {
 
 double num_ToDouble(num_t num);
 num_t num_FromDouble(double d);
-
 num_t num_Copy(num_t num);
+
+bool num_IsInteger(num_t num);
 
 void num_Cleanup(num_t num);
 
@@ -89,6 +91,8 @@ ast_t *ast_MakeSymbol(uint8_t symbol);
 ast_t *ast_MakeUnary(TokenType operator, ast_t *operand);
 ast_t *ast_MakeBinary(TokenType operator, ast_t *left, ast_t *right);
 
+ast_t *ast_Copy(ast_t *e);
+
 void ast_Cleanup(ast_t *e);
 
 //since 'e' uses an extension byte, we represent it as 0x01 in char symbol
@@ -131,6 +135,9 @@ typedef enum _Error {
 
 Error tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length);
 ast_t *parse(tokenizer_t *t, Error *error);
+
+ast_t *simplify(ast_t *e);
+ast_t *derivative(ast_t *e);
 
 //a way to test if functions are parsed correctly
 //default variable = the number to plug in for any encountered variable

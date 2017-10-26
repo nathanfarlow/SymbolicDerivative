@@ -39,7 +39,15 @@ int main(int argc, const char **argv) {
         return -1;
     }
 
-    printf("%.17g\n", evaluate(e, 0));
+    ast_t *deriv = derivative(e);
+
+    double x = 7.5;
+
+    printf("f(%g) = %.17g\n", x, evaluate(e, x));
+    if (deriv != NULL) {
+        printf("f'(%g) = %.17g\n", x, evaluate(deriv, x));
+        ast_Cleanup(deriv);
+    }
     
     ast_Cleanup(e);
     tokenizer_Cleanup(&t);
