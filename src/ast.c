@@ -419,25 +419,27 @@ ast_t *parse(tokenizer_t *t, Error *error) {
     stack_Create(&operators);
     stack_Create(&expressions);
 
-    for(i = 0; i < t->amount; i++) {
+    for (i = 0; i < t->amount; i++) {
         token_t *tok = &t->tokens[i];
 
-        if(tok->type == TOK_OPEN_PAR) {
+        if (tok->type == TOK_OPEN_PAR) {
             stack_Push(&operators, tok);
-        } else if(tok->type == TOK_NUMBER || tok->type == TOK_SYMBOL) {
+        }
+        else if (tok->type == TOK_NUMBER || tok->type == TOK_SYMBOL) {
             stack_Push(&expressions, tok->type == TOK_NUMBER ? ast_MakeNumber(num_Copy(tok->op.number)) : ast_MakeSymbol(tok->op.symbol));
 
             //detect if we are multiplying without the *
-            if(i + 1 < t->amount) {
+            if (i + 1 < t->amount) {
                 token_t *next = &t->tokens[i + 1];
 
-                if(should_multiply_by_next_token(next)) {
+                if (should_multiply_by_next_token(next)) {
                     parse_assert(collapse_precedence(&operators, &expressions, TOK_MULTIPLY), E_PARSE_BAD_OPERATOR);
                     stack_Push(&operators, &mult);
                 }
             }
 
-        } else if(is_tok_unary_operator(tok->type)) {
+        }
+        else if (is_tok_unary_operator(tok->type)) {
             stack_Push(&operators, tok);
 
             //detect if we are multiplying without the *
@@ -451,14 +453,17 @@ ast_t *parse(tokenizer_t *t, Error *error) {
                     }
                 }
             }
-        } else if(is_tok_binary_operator(tok->type)) {
+        }
+        else if (is_tok_binary_operator(tok->type)) {
             parse_assert(collapse_precedence(&operators, &expressions, tok->type), E_PARSE_BAD_OPERATOR);
             stack_Push(&operators, tok);
-        } else if(is_tok_function(tok->type)) {
+        }
+        else if (is_tok_function(tok->type)) {
             //insert a ( to correspond with the other closing ) following the parameters
             stack_Push(&operators, &open_par);
             stack_Push(&operators, tok);
-        } else if(tok->type == TOK_CLOSE_PAR) {
+        }
+        else if (tok->type == TOK_CLOSE_PAR) {
             parse_assert(collapse_precedence(&operators, &expressions, TOK_CLOSE_PAR), E_PARSE_BAD_OPERATOR);
             parse_assert(operators.top > 0 && ((token_t*)stack_Peek(&operators))->type == TOK_OPEN_PAR, E_PARSE_UNMATCHED_CLOSE_PAR);
 
@@ -474,7 +479,8 @@ ast_t *parse(tokenizer_t *t, Error *error) {
                 }
             }
 
-        } else if(tok->type == TOK_COMMA) {
+        }
+        else if (tok->type == TOK_COMMA) {
             parse_assert(collapse_precedence(&operators, &expressions, TOK_COMMA), E_PARSE_BAD_OPERATOR);
             parse_assert(operators.top > 0 && is_tok_function(((token_t*)stack_Peek(&operators))->type), E_PARSE_BAD_COMMA);
         }
@@ -494,7 +500,27 @@ ast_t *simplify(ast_t *e) {
     return NULL;
 }
 
+//expression does not contain an x
+bool is_constant(ast_t *e) {
+    switch (e->type) {
+    case NODE_NUMBER:
+        return true;
+    case NODE_SYMBOL:
+        return e->op.symbol == SYMBOL_PI || e->op.symbol == SYMBOL_E;
+    case NODE_UNARY:
+        return is_constant(e->op.unary.operand);
+    case NODE_BINARY:
+        return is_constant(e->op.binary.left) && is_constant(e->op.binary.right);
+    }
+    return false;
+}
+
+#define needs_chain(ast) (!is_constant(ast) && ast->type != NODE_SYMBOL)
+#define chain(ast, inner) ast_MakeBinary(TOK_MULTIPLY, ast, derivative(inner))
+
 ast_t *derivative(ast_t *e) {
+    if (is_constant(e))
+        return ast_MakeNumber(num_FromDouble(0));
 
     switch (e->type) {
     case NODE_NUMBER:
@@ -528,22 +554,23 @@ ast_t *derivative(ast_t *e) {
                 ast_MakeBinary(TOK_SUBTRACT,
                     ast_MakeBinary(TOK_MULTIPLY,
                         derivative(left),
-                        ast_Copy(right)), 
+                        ast_Copy(right)),
                     ast_MakeBinary(TOK_MULTIPLY,
                         derivative(right),
                         ast_Copy(left))),
                 ast_MakeUnary(TOK_SQUARE, ast_Copy(right)));
-        case TOK_POWER:
-            return ast_MakeBinary(TOK_MULTIPLY,
+        case TOK_POWER: {
+            ast_t *deriv = ast_MakeBinary(TOK_MULTIPLY,
                 ast_Copy(right),
                 ast_MakeBinary(TOK_POWER,
                     ast_Copy(left),
                     ast_MakeBinary(TOK_SUBTRACT,
                         ast_Copy(right),
                         ast_MakeNumber(num_FromDouble(1)))));
-        case TOK_ROOT: {
 
-            ast_t *ed = ast_MakeBinary(TOK_MULTIPLY,
+            return needs_chain(left) ? chain(deriv, left) : deriv;
+        } case TOK_ROOT: {
+            ast_t *deriv = ast_MakeBinary(TOK_MULTIPLY,
                 ast_MakeBinary(TOK_FRACTION,
                     ast_MakeNumber(num_FromDouble(1)),
                     ast_Copy(left)),
@@ -555,10 +582,29 @@ ast_t *derivative(ast_t *e) {
                             ast_Copy(left)),
                         ast_MakeNumber(num_FromDouble(1)))));
 
-            return ed;
+            return needs_chain(right) ? chain(deriv, right) : deriv;
 
-        } case TOK_LOG_BASE:
+        } case TOK_LOG_BASE: {
+
+            ast_t *deriv;
+            if (right->type == NODE_SYMBOL && right->op.symbol == SYMBOL_E) {
+                deriv = ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(num_FromDouble(1)),
+                    ast_Copy(left));
+            }
+            else {
+                deriv = ast_MakeBinary(TOK_DIVIDE,
+                    ast_MakeNumber(num_FromDouble(1)),
+                    ast_MakeBinary(TOK_MULTIPLY,
+                        ast_Copy(left),
+                        ast_MakeUnary(TOK_LN,
+                            ast_Copy(right))));
+            }
+
+            return needs_chain(left) ? chain(deriv, left) : deriv;
+
             break;
+        }
         }
 
     }
