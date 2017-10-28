@@ -87,7 +87,7 @@ num_t num_Copy(num_t num) {
 }
 
 bool num_IsInteger(num_t num) {
-    unsigned i;
+    uint16_t i;
     //doesn't matter if . is at the end of the number
     for (i = 0; i < num.length - 1; i++) {
         if (num.number[i] == '.')
@@ -496,10 +496,6 @@ ast_t *parse(tokenizer_t *t, Error *error) {
     return root;
 }
 
-ast_t *simplify(ast_t *e) {
-    return NULL;
-}
-
 //expression does not contain an x
 bool is_constant(ast_t *e) {
     switch (e->type) {
@@ -560,7 +556,8 @@ ast_t *derivative(ast_t *e) {
                         ast_Copy(left))),
                 ast_MakeUnary(TOK_SQUARE, ast_Copy(right)));
         case TOK_POWER: {
-            ast_t *deriv = ast_MakeBinary(TOK_MULTIPLY,
+            ast_t *deriv;
+            deriv = ast_MakeBinary(TOK_MULTIPLY,
                 ast_Copy(right),
                 ast_MakeBinary(TOK_POWER,
                     ast_Copy(left),
@@ -570,7 +567,8 @@ ast_t *derivative(ast_t *e) {
 
             return needs_chain(left) ? chain(deriv, left) : deriv;
         } case TOK_ROOT: {
-            ast_t *deriv = ast_MakeBinary(TOK_MULTIPLY,
+            ast_t *deriv;
+            deriv = ast_MakeBinary(TOK_MULTIPLY,
                 ast_MakeBinary(TOK_FRACTION,
                     ast_MakeNumber(num_FromDouble(1)),
                     ast_Copy(left)),
@@ -585,7 +583,6 @@ ast_t *derivative(ast_t *e) {
             return needs_chain(right) ? chain(deriv, right) : deriv;
 
         } case TOK_LOG_BASE: {
-
             ast_t *deriv;
             if (right->type == NODE_SYMBOL && right->op.symbol == SYMBOL_E) {
                 deriv = ast_MakeBinary(TOK_FRACTION,
@@ -609,8 +606,159 @@ ast_t *derivative(ast_t *e) {
 
     }
     }
-
     return NULL;
+}
+
+#define is_val(ast, val) (is_constant(ast) && evaluate(ast, 0) == val)
+
+ast_t *simplify(ast_t *e) {
+    ast_t *simplified = NULL;
+
+    switch (e->type) {
+    case NODE_NUMBER:
+    case NODE_SYMBOL:
+        return ast_Copy(e);
+    case NODE_UNARY: {
+        ast_t *op = e->op.unary.operand;
+
+        switch (e->op.unary.operator) {
+        case TOK_NEGATE:
+            if (is_val(op, 0))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            break;
+        case TOK_RECRIPROCAL:
+            //TODO: trig identities
+            if (is_val(op, 1))
+                simplified = ast_MakeNumber(num_FromDouble(1));
+            break;
+        case TOK_SQUARE:
+            if (is_val(op, 0))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            break;
+        case TOK_CUBE:
+            if (is_val(op, 0))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            break;
+        case TOK_INT:
+        case TOK_ABS:
+            break;
+        case TOK_SQRT:
+            if (is_val(op, 0))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            break;
+        case TOK_CUBED_ROOT:
+            if (is_val(op, 0))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            break;
+        case TOK_LN:
+            if (is_val(op, M_E))
+                simplified = ast_MakeNumber(num_FromDouble(1));
+            break;
+        case TOK_E_TO_POWER:
+            if (is_val(op, 0))
+                simplified = ast_MakeNumber(num_FromDouble(1));
+            else if (is_val(op, 1))
+                simplified = ast_Copy(op);
+            break;
+        case TOK_LOG:
+            if (is_val(op, 1))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            else if (is_val(op, 10))
+                simplified = ast_MakeNumber(num_FromDouble(1));
+        case TOK_10_TO_POWER:
+            //TODO: get x out of op
+            if (is_val(op, 0))
+                simplified = ast_MakeNumber(num_FromDouble(1));
+            else if (is_val(op, 1))
+                simplified = ast_Copy(op);
+            break;
+
+        //TODO: pi
+        case TOK_SIN:
+        case TOK_SIN_INV:
+        case TOK_COS:
+        case TOK_COS_INV:
+        case TOK_TAN:
+        case TOK_TAN_INV:
+        case TOK_SINH:
+        case TOK_SINH_INV:
+        case TOK_COSH:
+        case TOK_COSH_INV:
+        case TOK_TANH:
+        case TOK_TANH_INV:
+            break;
+        }
+        break;
+    } case NODE_BINARY: {
+        ast_t *left, *right;
+        left = e->op.binary.left;
+        right = e->op.binary.right;
+
+        switch (e->op.binary.operator) {
+        case TOK_ADD:
+            if (is_val(left, 0))
+                simplified = ast_Copy(right);
+            else if (is_val(right, 0))
+                simplified = ast_Copy(left);
+            break;
+        case TOK_SUBTRACT:
+            if (is_val(left, 0))
+                simplified = ast_MakeUnary(TOK_NEGATE, ast_Copy(right));
+            else if (is_val(right, 0))
+                simplified = ast_Copy(left);
+            break;
+        case TOK_MULTIPLY:
+            if (is_val(left, 0) || is_val(right, 0))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            break;
+        case TOK_DIVIDE:
+        case TOK_FRACTION:
+            //TODO: trig identities
+            if (is_val(left, 0))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            else if (is_val(right, 1))
+                simplified = ast_Copy(right);
+            break;
+        case TOK_POWER:
+            //TODO: get x out of right
+            if (is_val(left, 0))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            else if (is_val(left, 1))
+                simplified = ast_MakeNumber(num_FromDouble(1));
+            else if (is_val(right, 0))
+                simplified = ast_MakeNumber(num_FromDouble(1));
+            else if (is_val(right, 1))
+                simplified = ast_Copy(left);
+            break;
+        case TOK_ROOT:
+            //TODO: get x out of left
+            if (is_val(left, 1))
+                simplified = ast_Copy(right);
+            else if(is_val(right, 0))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            else if (is_val(right, 1))
+                simplified = ast_MakeNumber(num_FromDouble(1));
+            break;
+        case TOK_LOG_BASE:
+            //TODO: get x out of right
+            if (is_val(left, 1))
+                simplified = ast_MakeNumber(num_FromDouble(0));
+            else if (is_constant(left) && is_constant(right)
+                && evaluate(left, 0) == evaluate(right, 0))
+                simplified = ast_MakeNumber(num_FromDouble(1));
+            break;
+        }
+        break;
+    }
+    }
+
+    if (simplified != NULL) {
+        ast_t *ret = simplify(simplified);
+        ast_Cleanup(simplified);
+        return ret;
+    }
+
+    return e;
 }
 
 double asinh(double x) {

@@ -3,6 +3,18 @@
 #include "../src/ast.h"
 #include "yvar.h"
 
+unsigned amount_nodes(ast_t *e) {
+    switch (e->type) {
+    case NODE_NUMBER:
+    case NODE_SYMBOL:
+        return 1;
+    case NODE_UNARY:
+        return 1 + amount_nodes(e->op.unary.operand);
+    case NODE_BINARY:
+        return 2 + amount_nodes(e->op.binary.left) + amount_nodes(e->op.binary.right);
+    }
+}
+
 int main(int argc, const char **argv) {
     int error;
 
@@ -39,16 +51,23 @@ int main(int argc, const char **argv) {
         return -1;
     }
 
+    ast_t *simplified = simplify(e);
     ast_t *deriv = derivative(e);
 
     double x = 7.5;
-
-    printf("f(%g) = %.17g\n", x, evaluate(e, x));
+    printf("f(%g) =      %.17g\n", x, evaluate(e, x));
+    printf("f_simp(%g) = %.17g\n", x, evaluate(simplified, x));
     if (deriv != NULL) {
-        printf("f'(%g) = %.17g\n", x, evaluate(deriv, x));
+        printf("f'(%g) =     %.17g\n", x, evaluate(deriv, x));
         ast_Cleanup(deriv);
     }
-    
+
+    printf("\nsize of f(x):      %i\n", amount_nodes(e));
+    printf("size of f_simp(x): %i\n", amount_nodes(simplified));
+    if(deriv != NULL)
+        printf("size of f'(x):     %i\n", amount_nodes(e));
+
+    ast_Cleanup(simplified);
     ast_Cleanup(e);
     tokenizer_Cleanup(&t);
 
