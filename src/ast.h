@@ -115,7 +115,6 @@ typedef struct _Token {
 
 } token_t;
 
-
 typedef struct _Tokenizer {
     unsigned amount;
     token_t *tokens;
@@ -135,13 +134,6 @@ typedef enum _Error {
 
 Error tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length);
 ast_t *parse(tokenizer_t *t, Error *error);
-
-ast_t *simplify(ast_t *e);
-ast_t *derivative(ast_t *e);
-
-//a way to test if functions are parsed correctly
-//default variable = the number to plug in for any encountered variable
-double evaluate(ast_t *e, double default_symbol);
 
 //there can be only 2 bytes, one is extended byte
 #define IDENTIFIER_MAX_BYTES 2

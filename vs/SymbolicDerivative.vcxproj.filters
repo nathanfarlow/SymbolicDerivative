@@ -27,6 +27,9 @@
     <ClCompile Include="yvar.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\functions.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\ast.h">
@@ -36,6 +39,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="yvar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

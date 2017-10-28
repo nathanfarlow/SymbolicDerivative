@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "../src/ast.h"
+#include "../src/functions.h"
 #include "yvar.h"
 
 unsigned amount_nodes(ast_t *e) {
@@ -13,17 +13,19 @@ unsigned amount_nodes(ast_t *e) {
     case NODE_BINARY:
         return 2 + amount_nodes(e->op.binary.left) + amount_nodes(e->op.binary.right);
     }
+    return -1;
 }
 
 int main(int argc, const char **argv) {
-    int error;
+    Error error;
 
     if (argc <= 1) {
         printf("Usage: derivative.exe C:\\path\\to\\yvar.8xy\n");
         return -1;
     }
 
-    FILE *file = fopen(argv[1], "rb");
+    FILE *file;
+    fopen_s(&file, argv[1], "rb");
 
     if (!file) {
         printf("File not found.\n");
