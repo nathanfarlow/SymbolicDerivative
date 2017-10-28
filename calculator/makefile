@@ -20,8 +20,8 @@ DESCRIPTION ?= "Solve derivatives"
 # ----------------------------
 
 SRCDIR ?= ../src
-OBJDIR ?= ../obj
-BINDIR ?= ../bin
+OBJDIR ?= obj
+BINDIR ?= bin
 GFXDIR ?= ../src/gfx
 
 # ----------------------------
