@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{11FFCA87-3CA7-4C3A-9850-41CC84F779EA}</ProjectGuid>
+    <ProjectGuid>{9E58CB05-8F36-42A9-89C9-D3014FFB98D0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>SymbolicDerivative</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
@@ -143,18 +143,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\ast.c" />
-    <ClCompile Include="..\src\functions.c" />
-    <ClCompile Include="..\src\stack.c" />
-    <ClCompile Include="main.c" />
-    <ClCompile Include="yvar.c" />
+    <ClCompile Include="..\..\src\ast.c" />
+    <ClCompile Include="..\..\src\functions.c" />
+    <ClCompile Include="..\..\src\stack.c" />
+    <ClCompile Include="..\main.c" />
+    <ClCompile Include="..\yvar.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\ast.h" />
-    <ClInclude Include="..\src\functions.h" />
-    <ClInclude Include="..\src\stack.h" />
-    <ClInclude Include="..\src\system.h" />
-    <ClInclude Include="yvar.h" />
+    <ClInclude Include="..\..\src\ast.h" />
+    <ClInclude Include="..\..\src\functions.h" />
+    <ClInclude Include="..\..\src\stack.h" />
+    <ClInclude Include="..\..\src\system.h" />
+    <ClInclude Include="..\yvar.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

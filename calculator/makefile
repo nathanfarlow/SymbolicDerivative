@@ -19,10 +19,10 @@ DESCRIPTION ?= "Solve derivatives"
 # Specify source and output locations
 # ----------------------------
 
-SRCDIR ?= src
-OBJDIR ?= obj
-BINDIR ?= bin
-GFXDIR ?= src/gfx
+SRCDIR ?= ../src
+OBJDIR ?= ../obj
+BINDIR ?= ../bin
+GFXDIR ?= ../src/gfx
 
 # ----------------------------
 # Use OS helper functions (Advanced)
