@@ -62,16 +62,16 @@ int main(int argc, const char **argv) {
         return -1;
     }
 
-    ast_t *deriv = derivative(e);
+    ast_t *deriv = derivative(e, &error);
 
-    if (derivative == NULL) {
+    if (deriv == NULL) {
         printf("Derivative error: unable to find derivative of ast.\n");
         return -1;
     }
 
     ast_t *simplified_derivative = simplify(deriv);
 
-    if (derivative == NULL) {
+    if (simplified_derivative == NULL) {
         printf("Simplify error: unable to simplify derivative.\n");
         return -1;
     }

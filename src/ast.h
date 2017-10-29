@@ -17,6 +17,19 @@ bool num_IsInteger(num_t num);
 
 void num_Cleanup(num_t num);
 
+typedef enum _Error {
+    E_SUCCESS,
+
+    E_TOK_UNIDENTIFIED,
+
+    E_PARSE_BAD_OPERATOR,
+    E_PARSE_BAD_COMMA,
+    E_PARSE_UNMATCHED_CLOSE_PAR,
+
+    E_DERIV_UNIMPLEMENTED,
+    E_DERIV_NOT_ALLOWED
+} Error;
+
 typedef enum _NodeType {
     NODE_NUMBER, NODE_SYMBOL, NODE_UNARY, NODE_BINARY
 } NodeType;
