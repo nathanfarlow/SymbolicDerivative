@@ -22,7 +22,7 @@ DESCRIPTION ?= "Solve derivatives"
 SRCDIR ?= ../src
 OBJDIR ?= obj
 BINDIR ?= bin
-GFXDIR ?= ../src/gfx
+GFXDIR ?= gfx
 
 # ----------------------------
 # Use OS helper functions (Advanced)

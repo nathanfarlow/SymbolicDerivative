@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "../src/functions.h"
+#include "../src/cas.h"
 #include "yvar.h"
 
 unsigned amount_nodes(ast_t *e) {
@@ -48,29 +48,56 @@ int main(int argc, const char **argv) {
 
     ast_t *e = parse(&t, &error);
 
-    if (error != E_SUCCESS) {
+    if (e == NULL) {
         printf("Syntax error: unable to parse ast.\n");
         return -1;
     }
 
     ast_t *simplified = simplify(e);
-    ast_t *deriv = derivative(e);
 
-    double x = 7.5;
-    printf("f(%g) =      %.17g\n", x, evaluate(e, x));
-    printf("f_simp(%g) = %.17g\n", x, evaluate(simplified, x));
-    if (deriv != NULL) {
-        printf("f'(%g) =     %.17g\n", x, evaluate(deriv, x));
-        ast_Cleanup(deriv);
+    if (simplified == NULL) {
+        printf("Simplify error: unable to simplify ast.\n");
+        return -1;
     }
 
-    printf("\nsize of f(x):      %i\n", amount_nodes(e));
-    printf("size of f_simp(x): %i\n", amount_nodes(simplified));
-    if(deriv != NULL)
-        printf("size of f'(x):     %i\n", amount_nodes(e));
+    ast_t *deriv = derivative(e);
 
-    ast_Cleanup(simplified);
+    if (derivative == NULL) {
+        printf("Derivative error: unable to find derivative of ast.\n");
+        return -1;
+    }
+
+    ast_t *simplified_derivative = simplify(deriv);
+
+    if (derivative == NULL) {
+        printf("Simplify error: unable to simplify derivative.\n");
+        return -1;
+    }
+    
+    double x = 7.5;
+    printf("f(%g) =       %.17g\n", x, evaluate(e, x));
+    printf("f_simp(%g) =  %.17g\n", x, evaluate(simplified, x));
+    printf("f'(%g) =      %.17g\n", x, evaluate(deriv, x));
+    printf("f'_simp(%g) = %.17g\n", x, evaluate(simplified_derivative, x));
+
+    printf("\nsize of f(x):       %i\n", amount_nodes(e));
+    printf("size of f_simp(x):  %i\n", amount_nodes(simplified));
+    printf("size of f'(x):      %i\n", amount_nodes(e));
+    printf("size of f'_simp(x): %i\n", amount_nodes(e));
+
+    if (evaluate(e, x) != evaluate(simplified, x))
+        printf("\nWARNING: Simplified expression does not equal the original at %g\n", x);
+
+    if (evaluate(deriv, x) != evaluate(simplified_derivative, x))
+        printf("\nWARNING: Simplified derivative does not equal the original derivative at %g\n", x);
+
+    printf("\n");
+
     ast_Cleanup(e);
+    ast_Cleanup(simplified);
+    ast_Cleanup(deriv);
+    ast_Cleanup(simplified_derivative);
+
     tokenizer_Cleanup(&t);
 
     yvar_Cleanup(&yvar);

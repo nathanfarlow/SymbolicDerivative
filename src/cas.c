@@ -2,7 +2,7 @@
 #define _USE_MATH_DEFINES
 #endif
 
-#include "functions.h"
+#include "cas.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -81,7 +81,6 @@ ast_t *simplify(ast_t *e) {
             else if (is_val(op, 10))
                 simplified = ast_MakeNumber(num_FromDouble(1));
         case TOK_10_TO_POWER:
-            //TODO: get x out of op
             if (is_val(op, 0))
                 simplified = ast_MakeNumber(num_FromDouble(1));
             else if (is_val(op, 1))
@@ -135,7 +134,6 @@ ast_t *simplify(ast_t *e) {
                 simplified = ast_Copy(right);
             break;
         case TOK_POWER:
-            //TODO: get x out of right
             if (is_val(left, 0))
                 simplified = ast_MakeNumber(num_FromDouble(0));
             else if (is_val(left, 1))
@@ -146,7 +144,6 @@ ast_t *simplify(ast_t *e) {
                 simplified = ast_Copy(left);
             break;
         case TOK_ROOT:
-            //TODO: get x out of left
             if (is_val(left, 1))
                 simplified = ast_Copy(right);
             else if(is_val(right, 0))
@@ -155,7 +152,6 @@ ast_t *simplify(ast_t *e) {
                 simplified = ast_MakeNumber(num_FromDouble(1));
             break;
         case TOK_LOG_BASE:
-            //TODO: get x out of right
             if (is_val(left, 1))
                 simplified = ast_MakeNumber(num_FromDouble(0));
             else if (is_constant(left) && is_constant(right)
@@ -163,6 +159,7 @@ ast_t *simplify(ast_t *e) {
                 simplified = ast_MakeNumber(num_FromDouble(1));
             break;
         }
+
         break;
     }
     }
@@ -172,14 +169,15 @@ ast_t *simplify(ast_t *e) {
         ast_Cleanup(simplified);
         return ret;
     }
-
-    return e;
+    
+    return ast_Copy(e);
 }
 
 #define needs_chain(ast) (!is_constant(ast) && ast->type != NODE_SYMBOL)
-#define chain(ast, inner) ast_MakeBinary(TOK_MULTIPLY, ast, derivative(inner))
+#define chain(ast, inner) (needs_chain(ast) ? ast_MakeBinary(TOK_MULTIPLY, ast, derivative(inner)) : ast)
 
 ast_t *derivative(ast_t *e) {
+    ast_t *deriv;
     if (is_constant(e))
         return ast_MakeNumber(num_FromDouble(0));
 
@@ -191,9 +189,23 @@ ast_t *derivative(ast_t *e) {
             || e->op.symbol == SYMBOL_E)
             return ast_MakeNumber(num_FromDouble(0));
         return ast_MakeNumber(num_FromDouble(1));
-    case NODE_UNARY:
-        return 0;
-    case NODE_BINARY: {
+    case NODE_UNARY: {
+        ast_t *op = e->op.unary.operand;
+
+        switch (e->op.unary.operator) {
+        case TOK_SQUARE:
+            return chain(ast_MakeBinary(TOK_MULTIPLY,
+                ast_MakeNumber(num_FromDouble(2)),
+                ast_Copy(op)), op);
+        case TOK_LN:
+            return chain(ast_MakeBinary(TOK_FRACTION,
+                ast_MakeNumber(num_FromDouble(1)),
+                ast_Copy(op)), op);
+        default:
+            return NULL;
+        }
+
+    } case NODE_BINARY: {
         ast_t *left, *right;
 
         left = e->op.binary.left;
@@ -221,51 +233,88 @@ ast_t *derivative(ast_t *e) {
                         ast_Copy(left))),
                 ast_MakeUnary(TOK_SQUARE, ast_Copy(right)));
         case TOK_POWER: {
-            ast_t *deriv;
-            deriv = ast_MakeBinary(TOK_MULTIPLY,
+
+            if(is_constant(right)) {
+                deriv = chain(ast_MakeBinary(TOK_MULTIPLY,
                 ast_Copy(right),
                 ast_MakeBinary(TOK_POWER,
                     ast_Copy(left),
                     ast_MakeBinary(TOK_SUBTRACT,
                         ast_Copy(right),
-                        ast_MakeNumber(num_FromDouble(1)))));
+                        ast_MakeNumber(num_FromDouble(1))))), left);
+            } else {
+                ast_t *rewritten_exponent;
+                rewritten_exponent = ast_MakeBinary(TOK_MULTIPLY,
+                    ast_MakeUnary(TOK_LN,
+                        ast_Copy(left)),
+                    ast_Copy(right));
 
-            return needs_chain(left) ? chain(deriv, left) : deriv;
+                deriv = ast_MakeBinary(TOK_MULTIPLY,
+                    ast_MakeUnary(TOK_E_TO_POWER,
+                        ast_Copy(rewritten_exponent)),
+                    derivative(rewritten_exponent));
+
+                ast_Cleanup(rewritten_exponent);
+            }
+
+            return deriv;
+
         } case TOK_ROOT: {
-            ast_t *deriv;
-            deriv = ast_MakeBinary(TOK_MULTIPLY,
-                ast_MakeBinary(TOK_FRACTION,
-                    ast_MakeNumber(num_FromDouble(1)),
-                    ast_Copy(left)),
-                ast_MakeBinary(TOK_POWER,
-                    ast_Copy(right),
-                    ast_MakeBinary(TOK_SUBTRACT,
-                        ast_MakeBinary(TOK_FRACTION,
-                            ast_MakeNumber(num_FromDouble(1)),
-                            ast_Copy(left)),
-                        ast_MakeNumber(num_FromDouble(1)))));
 
-            return needs_chain(right) ? chain(deriv, right) : deriv;
+            ast_t *rewritten_exponent;
+            rewritten_exponent = ast_MakeBinary(TOK_FRACTION,
+                ast_MakeNumber(num_FromDouble(1)),
+                ast_Copy(left));
+
+            if (is_constant(left)) {
+                deriv = chain(ast_MakeBinary(TOK_MULTIPLY,
+                    ast_Copy(rewritten_exponent),
+                    ast_MakeBinary(TOK_POWER,
+                        ast_Copy(right),
+                        ast_MakeBinary(TOK_SUBTRACT,
+                            ast_Copy(rewritten_exponent),
+                            ast_MakeNumber(num_FromDouble(1))))), right);
+            }
+            else {
+
+                deriv = ast_MakeBinary(TOK_MULTIPLY,
+                    ast_Copy(e),
+                    derivative(
+                        ast_MakeBinary(TOK_MULTIPLY,
+                            ast_MakeUnary(TOK_LN,
+                                ast_Copy(right)),
+                            ast_Copy(rewritten_exponent))));
+            }
+
+            ast_Cleanup(rewritten_exponent);
+
+            return deriv;
 
         } case TOK_LOG_BASE: {
-            ast_t *deriv;
+
             if (right->type == NODE_SYMBOL && right->op.symbol == SYMBOL_E) {
-                deriv = ast_MakeBinary(TOK_FRACTION,
+                return ast_MakeBinary(TOK_FRACTION,
                     ast_MakeNumber(num_FromDouble(1)),
                     ast_Copy(left));
             }
             else {
-                deriv = ast_MakeBinary(TOK_DIVIDE,
-                    ast_MakeNumber(num_FromDouble(1)),
-                    ast_MakeBinary(TOK_MULTIPLY,
-                        ast_Copy(left),
+                if (is_constant(right)) {
+                    return chain(ast_MakeBinary(TOK_DIVIDE,
+                        ast_MakeNumber(num_FromDouble(1)),
+                        ast_MakeBinary(TOK_MULTIPLY,
+                            ast_Copy(left),
+                            ast_MakeUnary(TOK_LN,
+                                ast_Copy(right)))), left);
+                }
+                else {
+                    return derivative(ast_MakeBinary(TOK_FRACTION,
+                        ast_MakeUnary(TOK_LN,
+                            ast_Copy(left)),
                         ast_MakeUnary(TOK_LN,
                             ast_Copy(right))));
+                }
             }
 
-            return needs_chain(left) ? chain(deriv, left) : deriv;
-
-            break;
         }
         }
 

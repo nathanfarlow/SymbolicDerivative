@@ -142,7 +142,11 @@ ast_t *ast_MakeBinary(TokenType operator, ast_t *left, ast_t *right) {
 }
 
 ast_t *ast_Copy(ast_t *e) {
-    ast_t *ret = malloc(sizeof(ast_t));
+    ast_t *ret;
+
+    if (e == NULL) return NULL;
+
+    ret = malloc(sizeof(ast_t));
 
     ret->type = e->type;
 
