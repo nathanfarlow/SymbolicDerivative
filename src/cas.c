@@ -177,7 +177,7 @@ ast_t *simplify(ast_t *e) {
 #define chain(ast, inner) (needs_chain(ast) ? ast_MakeBinary(TOK_MULTIPLY, ast, derivative(inner, error)) : ast)
 
 ast_t *derivative(ast_t *e, Error *error) {
-    ast_t *ret, *temp;
+    ast_t *ret = NULL, *temp = NULL;
 
     *error = E_SUCCESS;
 
