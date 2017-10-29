@@ -62,7 +62,7 @@ int main(int argc, const char **argv) {
         return -1;
     }
 
-    ast_t *deriv = derivative(e, &error);
+    ast_t *deriv = derivative(e, 'X', &error);
 
     if (deriv == NULL) {
         printf("Derivative error: unable to find derivative of ast.\n");

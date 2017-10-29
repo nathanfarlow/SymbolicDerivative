@@ -9,7 +9,7 @@
 
 #include "system.h"
 
-//expression does not contain an x
+//expression does not contain symbol
 bool is_constant(ast_t *e) {
     switch (e->type) {
     case NODE_NUMBER:
@@ -174,9 +174,9 @@ ast_t *simplify(ast_t *e) {
 }
 
 #define needs_chain(ast) (!is_constant(ast) && ast->type != NODE_SYMBOL)
-#define chain(ast, inner) (needs_chain(ast) ? ast_MakeBinary(TOK_MULTIPLY, ast, derivative(inner, error)) : ast)
+#define chain(ast, inner) (needs_chain(ast) ? ast_MakeBinary(TOK_MULTIPLY, ast, derivative(inner, symbol, error)) : ast)
 
-ast_t *derivative(ast_t *e, Error *error) {
+ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
     ast_t *ret = NULL, *temp = NULL;
 
     *error = E_SUCCESS;
@@ -191,7 +191,8 @@ ast_t *derivative(ast_t *e, Error *error) {
             break;
         case NODE_SYMBOL:
             if (e->op.symbol == SYMBOL_PI
-                || e->op.symbol == SYMBOL_E)
+                || e->op.symbol == SYMBOL_E
+                || e->op.symbol != symbol)
                 ret = ast_MakeNumber(num_FromDouble(0));
             ret = ast_MakeNumber(num_FromDouble(1));
             break;
@@ -200,12 +201,12 @@ ast_t *derivative(ast_t *e, Error *error) {
 
             switch (e->op.unary.operator) {
             case TOK_NEGATE:
-                ret = ast_MakeUnary(TOK_NEGATE, derivative(op, error));
+                ret = ast_MakeUnary(TOK_NEGATE, derivative(op, symbol, error));
                 break;
             case TOK_RECRIPROCAL:
                 ret = ast_MakeUnary(TOK_NEGATE,
                     ast_MakeBinary(TOK_FRACTION,
-                        derivative(op, error),
+                        derivative(op, symbol, error),
                         ast_MakeUnary(TOK_SQUARE,
                             ast_Copy(op))));
                 break;
@@ -279,7 +280,7 @@ ast_t *derivative(ast_t *e, Error *error) {
                 ret = ast_MakeBinary(TOK_MULTIPLY,
                     ast_MakeUnary(TOK_E_TO_POWER,
                         ast_Copy(temp)),
-                    derivative(temp, error));
+                    derivative(temp, symbol, error));
 
                 ast_Cleanup(temp);
 
@@ -375,18 +376,18 @@ ast_t *derivative(ast_t *e, Error *error) {
             //https://www.mathsisfun.com/calculus/derivatives-rules.html
             switch (e->op.binary.operator) {
             case TOK_ADD:
-                ret = ast_MakeBinary(TOK_ADD, derivative(left, error), derivative(right, error));
+                ret = ast_MakeBinary(TOK_ADD, derivative(left, symbol, error), derivative(right, symbol, error));
                 break;
             case TOK_SUBTRACT:
-                ret = ast_MakeBinary(TOK_SUBTRACT, derivative(left, error), derivative(right, error));
+                ret = ast_MakeBinary(TOK_SUBTRACT, derivative(left, symbol, error), derivative(right, symbol, error));
                 break;
             case TOK_MULTIPLY:
                 ret = ast_MakeBinary(TOK_ADD,
                     ast_MakeBinary(TOK_MULTIPLY,
                         ast_Copy(left),
-                        derivative(right, error)),
+                        derivative(right, symbol, error)),
                     ast_MakeBinary(TOK_MULTIPLY,
-                        derivative(left, error),
+                        derivative(left, symbol, error),
                         ast_Copy(right)));
                 break;
             case TOK_DIVIDE:
@@ -394,10 +395,10 @@ ast_t *derivative(ast_t *e, Error *error) {
                 ret = ast_MakeBinary(TOK_FRACTION,
                     ast_MakeBinary(TOK_SUBTRACT,
                         ast_MakeBinary(TOK_MULTIPLY,
-                            derivative(left, error),
+                            derivative(left, symbol, error),
                             ast_Copy(right)),
                         ast_MakeBinary(TOK_MULTIPLY,
-                            derivative(right, error),
+                            derivative(right, symbol, error),
                             ast_Copy(left))),
                     ast_MakeUnary(TOK_SQUARE, ast_Copy(right)));
                 break;
@@ -421,7 +422,7 @@ ast_t *derivative(ast_t *e, Error *error) {
                     ret = ast_MakeBinary(TOK_MULTIPLY,
                         ast_MakeUnary(TOK_E_TO_POWER,
                             ast_Copy(temp)),
-                        derivative(temp, error));
+                        derivative(temp, symbol, error));
 
                     ast_Cleanup(temp);
                 }
@@ -439,7 +440,7 @@ ast_t *derivative(ast_t *e, Error *error) {
                     ast_MakeUnary(TOK_10_TO_POWER,
                         ast_Copy(right)));
 
-                    ret = derivative(temp, error);
+                    ret = derivative(temp, symbol, error);
                     
                     ast_Cleanup(temp);
 
@@ -468,7 +469,7 @@ ast_t *derivative(ast_t *e, Error *error) {
 
                     ret = ast_MakeBinary(TOK_MULTIPLY,
                         ast_Copy(e),
-                        derivative(temp, error));
+                        derivative(temp, symbol, error));
 
                     ast_Cleanup(temp);
                 }
@@ -499,7 +500,7 @@ ast_t *derivative(ast_t *e, Error *error) {
                             ast_MakeUnary(TOK_LN,
                                 ast_Copy(right)));
 
-                        ret = derivative(temp, error);
+                        ret = derivative(temp, symbol, error);
 
                         ast_Cleanup(temp);
                     }
