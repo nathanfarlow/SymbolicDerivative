@@ -43,7 +43,9 @@ typedef enum _TokenType {
     TOK_ADD, TOK_SUBTRACT,
     TOK_MULTIPLY, TOK_DIVIDE,
     TOK_FRACTION, //special '/' for ti pretty print
-    TOK_POWER, TOK_ROOT,
+    TOK_POWER,
+    TOK_SCIENTIFIC, //2.7E3
+    TOK_ROOT,
 
     //Unary operators
     TOK_NEGATE, //-

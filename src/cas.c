@@ -271,19 +271,17 @@ ast_t *derivative(ast_t *e, Error *error) {
                             ast_MakeNumber(num_FromDouble(10))))), op);
                 break;
             case TOK_10_TO_POWER: {
-                ast_t *rewritten_exponent = ast_MakeBinary(TOK_MULTIPLY,
+                temp = ast_MakeBinary(TOK_MULTIPLY,
                     ast_MakeUnary(TOK_LN,
                         ast_MakeNumber(num_FromDouble(10))),
                     ast_Copy(op));
 
-                temp = ast_MakeBinary(TOK_MULTIPLY,
+                ret = ast_MakeBinary(TOK_MULTIPLY,
                     ast_MakeUnary(TOK_E_TO_POWER,
-                        ast_Copy(rewritten_exponent)),
-                    derivative(rewritten_exponent, error));
+                        ast_Copy(temp)),
+                    derivative(temp, error));
 
-                ast_Cleanup(rewritten_exponent);
-
-                ret = temp;
+                ast_Cleanup(temp);
 
                 break;
             } case TOK_SIN:
@@ -406,7 +404,7 @@ ast_t *derivative(ast_t *e, Error *error) {
             case TOK_POWER: {
 
                 if (is_constant(right)) {
-                    temp = chain(ast_MakeBinary(TOK_MULTIPLY,
+                    ret = chain(ast_MakeBinary(TOK_MULTIPLY,
                         ast_Copy(right),
                         ast_MakeBinary(TOK_POWER,
                             ast_Copy(left),
@@ -415,24 +413,38 @@ ast_t *derivative(ast_t *e, Error *error) {
                                 ast_MakeNumber(num_FromDouble(1))))), left);
                 }
                 else {
-                    ast_t *rewritten_exponent;
-                    rewritten_exponent = ast_MakeBinary(TOK_MULTIPLY,
+                    temp = ast_MakeBinary(TOK_MULTIPLY,
                         ast_MakeUnary(TOK_LN,
                             ast_Copy(left)),
                         ast_Copy(right));
 
-                    temp = ast_MakeBinary(TOK_MULTIPLY,
+                    ret = ast_MakeBinary(TOK_MULTIPLY,
                         ast_MakeUnary(TOK_E_TO_POWER,
-                            ast_Copy(rewritten_exponent)),
-                        derivative(rewritten_exponent, error));
+                            ast_Copy(temp)),
+                        derivative(temp, error));
 
-                    ast_Cleanup(rewritten_exponent);
+                    ast_Cleanup(temp);
                 }
 
-                ret = temp;
+                break;
+            } case TOK_SCIENTIFIC:
+                //ti doesn't allow anything except a number on right,
+                //so we don't have to check for chaining right side
+
+                //instead, we're going to rewrite it as 10^() and find
+                //its derivative
+
+                temp = ast_MakeBinary(TOK_MULTIPLY,
+                    ast_Copy(left),
+                    ast_MakeUnary(TOK_10_TO_POWER,
+                        ast_Copy(right)));
+
+                    ret = derivative(temp, error);
+                    
+                    ast_Cleanup(temp);
 
                 break;
-            } case TOK_ROOT: {
+            case TOK_ROOT: {
 
                 ast_t *rewritten_exponent;
                 rewritten_exponent = ast_MakeBinary(TOK_FRACTION,
@@ -580,6 +592,7 @@ double evaluate(ast_t *e, double default_symbol) {
         case TOK_DIVIDE: return left / right;
         case TOK_FRACTION: return left / right;
         case TOK_POWER: return pow(left, right);
+        case TOK_SCIENTIFIC: return left * pow(10, right);
         case TOK_ROOT: return pow(right, 1 / left);
 
         case TOK_LOG_BASE: return log(left) / log(right);

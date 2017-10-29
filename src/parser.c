@@ -14,6 +14,7 @@ identifier_t identifiers[AMOUNT_TOKENS] = {
     {NODE_BINARY, TOK_DIVIDE, NONE, 1, {0x83}},
     {NODE_BINARY, TOK_FRACTION, NONE, 2, {0xEF, 0x2E}},
     {NODE_BINARY, TOK_POWER, NONE, 1, {0xF0}},
+    {NODE_BINARY, TOK_SCIENTIFIC, NONE, 1, {0x3B}},
     {NODE_BINARY, TOK_ROOT, NONE, 1, {0xF1}},
 
     {NODE_UNARY, TOK_NEGATE, LEFT, 1, {0xB0}},
@@ -222,6 +223,8 @@ uint8_t precedence(TokenType type) {
     case TOK_SQUARE: case TOK_CUBE:
     case TOK_ROOT:
         return 15;
+    case TOK_SCIENTIFIC:
+        return 20;
     default:
         return 0;
     }
