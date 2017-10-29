@@ -1,6 +1,8 @@
 #include <stdio.h>
 
+#include "../src/parser.h"
 #include "../src/cas.h"
+
 #include "yvar.h"
 
 unsigned amount_nodes(ast_t *e) {

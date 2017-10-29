@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\ast.c" />
     <ClCompile Include="..\..\src\cas.c" />
+    <ClCompile Include="..\..\src\parser.c" />
     <ClCompile Include="..\..\src\stack.c" />
     <ClCompile Include="..\main.c" />
     <ClCompile Include="..\yvar.c" />
@@ -152,6 +153,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\src\ast.h" />
     <ClInclude Include="..\..\src\cas.h" />
+    <ClInclude Include="..\..\src\parser.h" />
     <ClInclude Include="..\..\src\stack.h" />
     <ClInclude Include="..\..\src\system.h" />
     <ClInclude Include="..\yvar.h" />

@@ -19,7 +19,7 @@ DESCRIPTION ?= "Solve derivatives"
 # Specify source and output locations
 # ----------------------------
 
-SRCDIR ?= ../src
+SRCDIR ?= ../src main.c
 OBJDIR ?= obj
 BINDIR ?= bin
 GFXDIR ?= gfx
