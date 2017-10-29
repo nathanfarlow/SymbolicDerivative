@@ -193,15 +193,147 @@ ast_t *derivative(ast_t *e) {
         ast_t *op = e->op.unary.operand;
 
         switch (e->op.unary.operator) {
+        case TOK_NEGATE:
+            return ast_MakeUnary(TOK_NEGATE, derivative(op));
+        case TOK_RECRIPROCAL:
+            return ast_MakeUnary(TOK_NEGATE,
+                ast_MakeBinary(TOK_FRACTION,
+                    derivative(op),
+                    ast_MakeUnary(TOK_SQUARE,
+                        ast_Copy(op))));
         case TOK_SQUARE:
             return chain(ast_MakeBinary(TOK_MULTIPLY,
                 ast_MakeNumber(num_FromDouble(2)),
                 ast_Copy(op)), op);
+        case TOK_CUBE:
+            return chain(ast_MakeBinary(TOK_MULTIPLY,
+                ast_MakeNumber(num_FromDouble(3)),
+                ast_MakeUnary(TOK_SQUARE,
+                    ast_Copy(op))), op);
+        case TOK_INT:
+            //throw error
+            return ast_MakeNumber(num_FromDouble(0));
+        case TOK_ABS:
+            return chain(ast_MakeBinary(TOK_FRACTION,
+                ast_Copy(op),
+                ast_MakeUnary(TOK_ABS,
+                    ast_Copy(op))), op);
+        case TOK_SQRT:
+            return chain(ast_MakeBinary(TOK_MULTIPLY,
+                ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(num_FromDouble(1)),
+                    ast_MakeNumber(num_FromDouble(2))),
+                ast_MakeBinary(TOK_POWER,
+                    ast_Copy(op),
+                    ast_MakeUnary(TOK_NEGATE,
+                        ast_MakeBinary(TOK_FRACTION,
+                            ast_MakeNumber(num_FromDouble(1)),
+                            ast_MakeNumber(num_FromDouble(2)))))), op);
+        case TOK_CUBED_ROOT:
+            return chain(ast_MakeBinary(TOK_MULTIPLY,
+                ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(num_FromDouble(1)),
+                    ast_MakeNumber(num_FromDouble(3))),
+                ast_MakeBinary(TOK_POWER,
+                    ast_Copy(op),
+                    ast_MakeUnary(TOK_NEGATE,
+                        ast_MakeBinary(TOK_FRACTION,
+                            ast_MakeNumber(num_FromDouble(2)),
+                            ast_MakeNumber(num_FromDouble(3)))))), op);
         case TOK_LN:
             return chain(ast_MakeBinary(TOK_FRACTION,
                 ast_MakeNumber(num_FromDouble(1)),
                 ast_Copy(op)), op);
+        case TOK_E_TO_POWER:
+            return chain(ast_MakeUnary(TOK_E_TO_POWER,
+                ast_Copy(op)), op);
+        case TOK_LOG:
+            return chain(ast_MakeBinary(TOK_DIVIDE,
+                ast_MakeNumber(num_FromDouble(1)),
+                ast_MakeBinary(TOK_MULTIPLY,
+                    ast_Copy(op),
+                    ast_MakeUnary(TOK_LN,
+                        ast_MakeNumber(num_FromDouble(10))))), op);
+        case TOK_10_TO_POWER: {
+                ast_t *rewritten_exponent = ast_MakeBinary(TOK_MULTIPLY,
+                    ast_MakeUnary(TOK_LN,
+                        ast_MakeNumber(num_FromDouble(10))),
+                    ast_Copy(op));
+
+                deriv = ast_MakeBinary(TOK_MULTIPLY,
+                    ast_MakeUnary(TOK_E_TO_POWER,
+                        ast_Copy(rewritten_exponent)),
+                    derivative(rewritten_exponent));
+
+                ast_Cleanup(rewritten_exponent);
+
+                return deriv;
+        } case TOK_SIN:
+            return chain(ast_MakeUnary(TOK_COS,
+                ast_Copy(op)), op);
+        case TOK_SIN_INV:
+            return chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ast_MakeUnary(TOK_SQRT,
+                    ast_MakeBinary(TOK_SUBTRACT,
+                        ast_MakeNumber(num_FromDouble(1)),
+                        ast_MakeUnary(TOK_SQUARE,
+                            ast_Copy(op))))), op);
+        case TOK_COS:
+            return chain(ast_MakeUnary(TOK_NEGATE,
+                ast_MakeUnary(TOK_SIN,
+                    ast_Copy(op))), op);
+        case TOK_COS_INV:
+            return chain(ast_MakeUnary(TOK_NEGATE,
+                ast_MakeUnary(TOK_RECRIPROCAL,
+                    ast_MakeUnary(TOK_SQRT,
+                        ast_MakeBinary(TOK_SUBTRACT,
+                            ast_MakeNumber(num_FromDouble(1)),
+                            ast_MakeUnary(TOK_SQUARE,
+                                ast_Copy(op)))))), op);
+        case TOK_TAN:
+            return chain(ast_MakeUnary(TOK_SQUARE,
+                ast_MakeUnary(TOK_RECRIPROCAL,
+                    ast_MakeUnary(TOK_COS,
+                        ast_Copy(op)))), op);
+        case TOK_TAN_INV:
+            return chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ast_MakeBinary(TOK_ADD,
+                    ast_MakeNumber(num_FromDouble(1)),
+                    ast_MakeUnary(TOK_SQUARE,
+                        ast_Copy(op)))), op);
+        case TOK_SINH:
+            return chain(ast_MakeUnary(TOK_COSH,
+                ast_Copy(op)), op);
+        case TOK_SINH_INV:
+            return chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ast_MakeUnary(TOK_SQRT,
+                    ast_MakeBinary(TOK_ADD,
+                        ast_MakeUnary(TOK_SQUARE,
+                            ast_Copy(op)),
+                        ast_MakeNumber(num_FromDouble(1))))), op);
+        case TOK_COSH:
+            return chain(ast_MakeUnary(TOK_SINH,
+                ast_Copy(op)), op);
+        case TOK_COSH_INV:
+            return chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ast_MakeUnary(TOK_SQRT,
+                    ast_MakeBinary(TOK_SUBTRACT,
+                        ast_MakeUnary(TOK_SQUARE,
+                            ast_Copy(op)),
+                        ast_MakeNumber(num_FromDouble(1))))), op);
+        case TOK_TANH:
+            return chain(ast_MakeUnary(TOK_SQUARE,
+                ast_MakeUnary(TOK_RECRIPROCAL,
+                    ast_MakeUnary(TOK_COSH,
+                        ast_Copy(op)))), op);
+        case TOK_TANH_INV:
+            return chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ast_MakeBinary(TOK_SUBTRACT,
+                    ast_MakeNumber(num_FromDouble(1)),
+                    ast_MakeUnary(TOK_SQUARE,
+                        ast_Copy(op)))), op);
         default:
+            //throw error
             return NULL;
         }
 
@@ -219,8 +351,12 @@ ast_t *derivative(ast_t *e) {
             return ast_MakeBinary(TOK_SUBTRACT, derivative(left), derivative(right));
         case TOK_MULTIPLY:
             return ast_MakeBinary(TOK_ADD,
-                ast_MakeBinary(TOK_MULTIPLY, ast_Copy(left), derivative(right)),
-                ast_MakeBinary(TOK_MULTIPLY, derivative(left), ast_Copy(right)));
+                ast_MakeBinary(TOK_MULTIPLY,
+                    ast_Copy(left),
+                    derivative(right)),
+                ast_MakeBinary(TOK_MULTIPLY,
+                    derivative(left),
+                    ast_Copy(right)));
         case TOK_DIVIDE:
         case TOK_FRACTION:
             return ast_MakeBinary(TOK_FRACTION,
@@ -320,6 +456,8 @@ ast_t *derivative(ast_t *e) {
 
     }
     }
+
+    //throw error
     return NULL;
 }
 

@@ -76,7 +76,7 @@ int main(int argc, const char **argv) {
         return -1;
     }
     
-    double x = 7.5;
+    double x = 0.5;
     printf("f(%g) =       %.17g\n", x, evaluate(e, x));
     printf("f_simp(%g) =  %.17g\n", x, evaluate(simplified, x));
     printf("f'(%g) =      %.17g\n", x, evaluate(deriv, x));
