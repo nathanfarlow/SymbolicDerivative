@@ -452,7 +452,7 @@ ast_t *derivative(ast_t *e, Error *error) {
                     ast_Copy(left));
 
                 if (is_constant(left)) {
-                    temp = chain(ast_MakeBinary(TOK_MULTIPLY,
+                    ret = chain(ast_MakeBinary(TOK_MULTIPLY,
                         ast_Copy(rewritten_exponent),
                         ast_MakeBinary(TOK_POWER,
                             ast_Copy(right),
@@ -461,19 +461,19 @@ ast_t *derivative(ast_t *e, Error *error) {
                                 ast_MakeNumber(num_FromDouble(1))))), right);
                 }
                 else {
-
                     temp = ast_MakeBinary(TOK_MULTIPLY,
+                        ast_MakeUnary(TOK_LN,
+                            ast_Copy(right)),
+                        ast_Copy(rewritten_exponent));
+
+                    ret = ast_MakeBinary(TOK_MULTIPLY,
                         ast_Copy(e),
-                        derivative(
-                            ast_MakeBinary(TOK_MULTIPLY,
-                                ast_MakeUnary(TOK_LN,
-                                    ast_Copy(right)),
-                                ast_Copy(rewritten_exponent)), error));
+                        derivative(temp, error));
+
+                    ast_Cleanup(temp);
                 }
 
                 ast_Cleanup(rewritten_exponent);
-
-                ret = temp;
 
                 break;
             } case TOK_LOG_BASE: {
@@ -493,11 +493,15 @@ ast_t *derivative(ast_t *e, Error *error) {
                                     ast_Copy(right)))), left);
                     }
                     else {
-                        ret = derivative(ast_MakeBinary(TOK_FRACTION,
+                        temp = ast_MakeBinary(TOK_FRACTION,
                             ast_MakeUnary(TOK_LN,
                                 ast_Copy(left)),
                             ast_MakeUnary(TOK_LN,
-                                ast_Copy(right))), error);
+                                ast_Copy(right)));
+
+                        ret = derivative(temp, error);
+
+                        ast_Cleanup(temp);
                     }
                 }
 
