@@ -5,19 +5,6 @@
 
 #include "yvar.h"
 
-unsigned amount_nodes(ast_t *e) {
-    switch (e->type) {
-    case NODE_NUMBER:
-    case NODE_SYMBOL:
-        return 1;
-    case NODE_UNARY:
-        return 1 + amount_nodes(e->op.unary.operand);
-    case NODE_BINARY:
-        return 2 + amount_nodes(e->op.binary.left) + amount_nodes(e->op.binary.right);
-    }
-    return -1;
-}
-
 int main(int argc, const char **argv) {
     Error error;
 

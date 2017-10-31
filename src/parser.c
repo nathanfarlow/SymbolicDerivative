@@ -230,6 +230,22 @@ uint8_t precedence(TokenType type) {
     }
 }
 
+//boy do i miss oop
+uint8_t precedence_node(ast_t *e) {
+    switch (e->type) {
+    case NODE_NUMBER:
+        return precedence(TOK_NUMBER);
+    case NODE_SYMBOL:
+        return precedence(TOK_SYMBOL);
+    case NODE_UNARY:
+        return precedence(e->op.unary.operator);
+    case NODE_BINARY:
+        return precedence(e->op.binary.operator);
+    default:
+        return 0;
+    }
+}
+
 bool collapse_precedence(stack_t *operators, stack_t *expressions, TokenType type) {
     while(operators->top > 0
         && ((type == TOK_CLOSE_PAR && ((token_t*)stack_Peek(operators))->type != TOK_OPEN_PAR)
@@ -357,4 +373,130 @@ ast_t *parse(tokenizer_t *t, Error *error) {
     stack_Cleanup(&expressions);
 
     return root;
+}
+
+#define add_byte(byte) if(data != NULL) data[index++] = byte;
+#define add_num(num) {unsigned i; for(i = 0; i < num.length; i++) add_byte(num.number[i]);}
+#define add_token(tok) {unsigned i; for(i = 0; i < identifiers[tok].length; i++) add_byte(identifiers[tok].bytes[i]);}
+
+unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
+	
+    switch (e->type) {
+
+    case NODE_NUMBER: {
+        add_num(e->op.number);
+        break;
+    } case NODE_SYMBOL:
+        add_byte(e->op.symbol);
+        break;
+    case NODE_UNARY: {
+        TokenType type = e->op.unary.operator;
+
+        if (is_tok_unary_function(type)) {
+            add_token(type);
+            index = _to_binary(e->op.unary.operand, data, index, error);
+            add_token(TOK_CLOSE_PAR);
+        }
+        else {
+            //if we need parentheses around operand
+            bool paren = precedence_node(e->op.unary.operand) < precedence_node(e);
+
+            //TODO: Check if we need parentheses around 10^x and e^x
+
+            if (identifiers[type].direction == LEFT)
+                add_token(type);
+
+            if (paren)
+                add_token(TOK_OPEN_PAR);
+
+            index = _to_binary(e->op.unary.operand, data, index, error);
+
+            if (paren)
+                add_token(TOK_CLOSE_PAR);
+
+            if (identifiers[type].direction == LEFT) {
+                add_token(type);
+
+                if (identifiers[type].direction == RIGHT)
+                    add_token(type);
+            }
+
+            break;
+        } case NODE_BINARY: {
+            TokenType type = e->op.binary.operator;
+
+            if (is_tok_binary_function(type)) {
+                add_token(type);
+                index = _to_binary(e->op.binary.left, data, index, error);
+                add_token(TOK_COMMA);
+                index = _to_binary(e->op.binary.right, data, index, error);
+                add_token(TOK_CLOSE_PAR);
+            }
+            else {
+                //if we need parentheses around operands
+                bool paren_left, paren_right;
+
+                paren_left = precedence_node(e->op.binary.left) < precedence_node(e);
+                paren_right = precedence_node(e->op.binary.right) < precedence_node(e);
+
+                //We always need parentheses around fractions
+                paren_left |= paren_right |= type == TOK_FRACTION;
+
+                //We need parentheses if the token is power and the exponent is
+                //something other than a number or symbol
+                paren_right |= type == TOK_POWER
+                                && amount_nodes(e->op.binary.right) > 1;
+
+                if (paren_left)
+                    add_token(TOK_OPEN_PAR);
+                index = _to_binary(e->op.binary.left, data, index, error);
+                if (paren_left)
+                    add_token(TOK_CLOSE_PAR);
+
+                add_token(type);
+
+                if (paren_right)
+                    add_token(TOK_OPEN_PAR);
+                index = _to_binary(e->op.binary.right, data, index, error);
+                if (paren_right)
+                    add_token(TOK_CLOSE_PAR);
+            }
+
+
+            break;
+        }
+    }
+    }
+	return index;
+}
+
+uint8_t *to_binary(ast_t *e, unsigned *size, Error *error) {
+	
+	uint8_t *data;
+	
+	*error = E_SUCCESS;
+	
+	*size = _to_binary(e, NULL, 0, error);
+	
+	if(*error == E_SUCCESS) {
+		data = malloc(*size);
+	    _to_binary(e, data, 0, error);
+        return data;
+	}
+	
+	*size = 0;
+	return NULL;
+}
+
+unsigned amount_nodes(ast_t *e) {
+    switch (e->type) {
+    case NODE_NUMBER:
+    case NODE_SYMBOL:
+        return 1;
+    case NODE_UNARY:
+        return 1 + amount_nodes(e->op.unary.operand);
+    case NODE_BINARY:
+        return 2 + amount_nodes(e->op.binary.left) + amount_nodes(e->op.binary.right);
+    }
+    return -1;
 }
