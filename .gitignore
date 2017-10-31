@@ -1,9 +1,5 @@
-calculator/obj/
-calculator/bin/
-
-pc/windows/x64/
-pc/windows/.vs/
-pc/windows/*.user
+obj/
+bin/
 
 *.sublime-project
 *.sublime-workspace

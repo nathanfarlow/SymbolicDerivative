@@ -1,3 +1,5 @@
+#ifdef COMPILE_PC
+
 #include "yvar.h"
 
 #include <string.h>
@@ -64,3 +66,5 @@ int yvar_Read(yvar_t *yvar, FILE *file) {
 void yvar_Cleanup(yvar_t *yvar) {
     free(yvar->data);
 }
+
+#endif

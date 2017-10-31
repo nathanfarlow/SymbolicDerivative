@@ -1,7 +1,9 @@
+#ifdef COMPILE_PC
+
 #include <stdio.h>
 
-#include "../src/parser.h"
-#include "../src/cas.h"
+#include "../parser.h"
+#include "../cas.h"
 
 #include "yvar.h"
 
@@ -94,3 +96,5 @@ int main(int argc, const char **argv) {
 
     return 0;
 }
+
+#endif

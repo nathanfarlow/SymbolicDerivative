@@ -9,7 +9,7 @@
 
 #include <tice.h>
 
-#include "../src/ast.h"
+#include "../ast.h"
 
 void main(void) {
     

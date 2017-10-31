@@ -1,3 +1,5 @@
+#ifdef COMPILE_PC
+
 #ifndef _YVAR_H_
 #define _YVAR_H_
 
@@ -28,5 +30,7 @@ typedef struct {
 int yvar_Read(yvar_t *yvar, FILE *file);
 
 void yvar_Cleanup(yvar_t *yvar);
+
+#endif
 
 #endif
