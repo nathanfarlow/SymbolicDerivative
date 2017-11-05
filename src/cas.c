@@ -4,6 +4,7 @@
 
 #include "cas.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
@@ -27,62 +28,67 @@ bool is_constant(ast_t *e) {
 #define is_val(ast, val) (is_constant(ast) && evaluate(ast, 0) == val)
 
 ast_t *simplify(ast_t *e) {
-    ast_t *simplified = NULL;
+    ast_t *simplified = NULL, *target, *ret;
+
+    num_t num_value_0, num_value_1;
+    num_value_0 = num_Create("0");
+    num_value_1 = num_Create("1");
 
     switch (e->type) {
     case NODE_NUMBER:
     case NODE_SYMBOL:
-        return ast_Copy(e);
+        break;
     case NODE_UNARY: {
         ast_t *op = e->op.unary.operand;
 
         switch (e->op.unary.operator) {
         case TOK_NEGATE:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             break;
         case TOK_RECRIPROCAL:
             //TODO: trig identities
             if (is_val(op, 1))
-                simplified = ast_MakeNumber(num_Create("1"));
+                simplified = ast_MakeNumber(num_value_1);
             break;
         case TOK_SQUARE:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             break;
         case TOK_CUBE:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             break;
         case TOK_INT:
         case TOK_ABS:
             break;
         case TOK_SQRT:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             break;
         case TOK_CUBED_ROOT:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             break;
         case TOK_LN:
             if (is_val(op, M_E))
-                simplified = ast_MakeNumber(num_Create("1"));
+                simplified = ast_MakeNumber(num_value_1);
             break;
         case TOK_E_TO_POWER:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_Create("1"));
+                simplified = ast_MakeNumber(num_value_1);
             else if (is_val(op, 1))
                 simplified = ast_Copy(op);
             break;
         case TOK_LOG:
             if (is_val(op, 1))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             else if (is_val(op, 10))
-                simplified = ast_MakeNumber(num_Create("1"));
+                simplified = ast_MakeNumber(num_value_1);
+            break;
         case TOK_10_TO_POWER:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_Create("1"));
+                simplified = ast_MakeNumber(num_value_1);
             else if (is_val(op, 1))
                 simplified = ast_Copy(op);
             break;
@@ -114,32 +120,66 @@ ast_t *simplify(ast_t *e) {
                 simplified = ast_Copy(right);
             else if (is_val(right, 0))
                 simplified = ast_Copy(left);
+            else if(left->type == NODE_NUMBER  && right->type == NODE_NUMBER
+                && num_IsInteger(left->op.number) && num_IsInteger(right->op.number)
+                && left->op.number.length <= 10 && right->op.number.length <= 10) {
+                char buffer[50];
+                num_t num;
+                int result = evaluate(e, 0);
+                sprintf(buffer, "%d", result);
+                num = num_Create(buffer);
+                simplified = ast_MakeNumber(num);
+            }
             break;
         case TOK_SUBTRACT:
             if (is_val(left, 0))
                 simplified = ast_MakeUnary(TOK_NEGATE, ast_Copy(right));
             else if (is_val(right, 0))
                 simplified = ast_Copy(left);
+            else if(left->type == NODE_NUMBER  && right->type == NODE_NUMBER
+                && num_IsInteger(left->op.number) && num_IsInteger(right->op.number)
+                && left->op.number.length <= 10 && right->op.number.length <= 10) {
+                char buffer[50];
+                num_t num;
+                int result = evaluate(e, 0);
+                sprintf(buffer, "%d", result);
+                num = num_Create(buffer);
+                simplified = ast_MakeNumber(num);
+            }
             break;
         case TOK_MULTIPLY:
             if (is_val(left, 0) || is_val(right, 0))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
+            else if(is_val(left, 1))
+                simplified = ast_Copy(right);
+            else if(is_val(right, 1))
+                simplified = ast_Copy(left);
+            else if(left->type == NODE_NUMBER  && right->type == NODE_NUMBER
+                && num_IsInteger(left->op.number) && num_IsInteger(right->op.number)
+                && left->op.number.length <= 10 && right->op.number.length <= 10) {
+                char buffer[50];
+                num_t num;
+                int result = evaluate(e, 0);
+                sprintf(buffer, "%d", result);
+                num = num_Create(buffer);
+                simplified = ast_MakeNumber(num);
+            }
             break;
         case TOK_DIVIDE:
         case TOK_FRACTION:
             //TODO: trig identities
             if (is_val(left, 0))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             else if (is_val(right, 1))
                 simplified = ast_Copy(right);
             break;
         case TOK_POWER:
             if (is_val(left, 0))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             else if (is_val(left, 1))
-                simplified = ast_MakeNumber(num_Create("1"));
+                simplified = ast_MakeNumber(num_value_1);
             else if (is_val(right, 0))
-                simplified = ast_MakeNumber(num_Create("1"));
+                simplified = ast_MakeNumber(num_value_1);
             else if (is_val(right, 1))
                 simplified = ast_Copy(left);
             break;
@@ -147,16 +187,16 @@ ast_t *simplify(ast_t *e) {
             if (is_val(left, 1))
                 simplified = ast_Copy(right);
             else if(is_val(right, 0))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             else if (is_val(right, 1))
-                simplified = ast_MakeNumber(num_Create("1"));
+                simplified = ast_MakeNumber(num_value_1);
             break;
         case TOK_LOG_BASE:
             if (is_val(left, 1))
-                simplified = ast_MakeNumber(num_Create("0"));
+                simplified = ast_MakeNumber(num_value_0);
             else if (is_constant(left) && is_constant(right)
                 && evaluate(left, 0) == evaluate(right, 0))
-                simplified = ast_MakeNumber(num_Create("1"));
+                simplified = ast_MakeNumber(num_value_1);
             break;
         }
 
@@ -164,13 +204,28 @@ ast_t *simplify(ast_t *e) {
     }
     }
 
-    if (simplified != NULL) {
-        ast_t *ret = simplify(simplified);
-        ast_Cleanup(simplified);
-        return ret;
+    target = simplified == NULL ? e : simplified;
+
+    switch (target->type) {
+    case NODE_NUMBER:
+    case NODE_SYMBOL:
+        ret = ast_Copy(target);
+        break;
+    case NODE_UNARY:
+        ret = ast_MakeUnary(target->op.unary.operator, simplify(target->op.unary.operand));
+        break;
+    case NODE_BINARY:
+        ret = ast_MakeBinary(target->op.unary.operator, simplify(target->op.binary.left), simplify(target->op.binary.right));
+        break;
+    default:
+        ret = NULL;
+        break;
     }
-    
-    return ast_Copy(e);
+
+    if (simplified != NULL)
+        ast_Cleanup(simplified);
+
+    return ret;
 }
 
 #define needs_chain(ast) (!is_constant(ast) && ast->type != NODE_SYMBOL)
@@ -294,7 +349,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                 n[0] = num_Create("1");
                 n[1] = num_Create("10");
 
-                ret = chain(ast_MakeBinary(TOK_DIVIDE,
+                ret = chain(ast_MakeBinary(TOK_FRACTION,
                     ast_MakeNumber(n[0]),
                     ast_MakeBinary(TOK_MULTIPLY,
                         ast_Copy(op),
@@ -564,7 +619,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
 
 #ifdef __TICE__
 double asinh(double x) {
-    return log(x + sqrt(1 + pow(x, 2))) / log(M_E);
+    return log(x + sqrt(1 + pow(x, 2)));
 }
 
 double acosh(double x) {
@@ -599,16 +654,16 @@ double evaluate(ast_t *e, double default_symbol) {
         switch (e->op.unary.operator) {
         case TOK_NEGATE: return -1 * x;
         case TOK_RECRIPROCAL: return 1 / x;
-        case TOK_SQUARE: return pow(x, 2);
-        case TOK_CUBE: return pow(x, 3);
+        case TOK_SQUARE: return pow(abs(x), 2);
+        case TOK_CUBE: pow(x, 3);
 
         case TOK_INT: return (int)x;
         case TOK_ABS: return fabs(x);
 
         case TOK_SQRT: return sqrt(x);
-        case TOK_CUBED_ROOT: return pow(x, 1/3); break;
+        case TOK_CUBED_ROOT: pow(x, 1/3);
 
-        case TOK_LN: return log(x) / log(M_E);
+        case TOK_LN: return log(x);
         case TOK_E_TO_POWER: return pow(M_E, x);
         case TOK_LOG: return log(x) / log(10);
         case TOK_10_TO_POWER: return pow(10, x);

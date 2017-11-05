@@ -216,9 +216,11 @@ uint8_t precedence(TokenType type) {
     switch (type) {
     case TOK_ADD: case TOK_SUBTRACT:
         return 5;
-    case TOK_MULTIPLY: case TOK_NEGATE:
+    case TOK_MULTIPLY:
     case TOK_DIVIDE: case TOK_FRACTION:
         return 10;
+    case TOK_NEGATE:
+        return 11;
     case TOK_POWER: case TOK_RECRIPROCAL:
     case TOK_SQUARE: case TOK_CUBE:
     case TOK_ROOT:
@@ -393,8 +395,6 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
     switch (e->type) {
 
     case NODE_NUMBER: {
-        if (e->op.number.length == 2)
-            data = data;
         add_num(e->op.number);
         break;
     } case NODE_SYMBOL:
@@ -446,8 +446,9 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 //if we need parentheses around operands
                 bool paren_left, paren_right;
 
-                paren_left = is_tok_binary_operator(e->op.binary.left->type) && precedence_node(e->op.binary.left) < precedence_node(e);
-                paren_right = is_tok_binary_operator(e->op.binary.right->type) && precedence_node(e->op.binary.right) <= precedence_node(e);
+                paren_left = e->op.binary.left->type == NODE_BINARY && is_tok_binary_operator(e->op.binary.left->op.binary.operator) && precedence_node(e->op.binary.left) < precedence_node(e);
+                paren_right = e->op.binary.right->type == NODE_BINARY && is_tok_binary_operator(e->op.binary.right->op.binary.operator) 
+                && (precedence_node(e->op.binary.right) <= precedence_node(e) && !(type == TOK_MULTIPLY && e->op.binary.right->op.binary.operator == TOK_MULTIPLY));
 
                 //We always need parentheses around fractions
                 paren_left |= type == TOK_FRACTION;
@@ -464,7 +465,8 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 if (paren_left)
                     add_token(TOK_CLOSE_PAR);
 
-                add_token(type);
+                if(!(type == TOK_MULTIPLY && (precedence_node(e->op.binary.right) >= precedence_node(e) || e->op.binary.right->type == TOK_SYMBOL)))
+                    add_token(type);
 
                 if (paren_right)
                     add_token(TOK_OPEN_PAR);

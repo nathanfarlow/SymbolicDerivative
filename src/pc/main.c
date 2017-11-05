@@ -58,6 +58,8 @@ int main(int argc, const char **argv) {
         return -1;
     }
 
+    printf("%g\n\n", pow(-1, 3));
+
     ast_t *simplified_derivative = simplify(deriv);
 
     if (simplified_derivative == NULL) {
@@ -68,7 +70,7 @@ int main(int argc, const char **argv) {
     unsigned size = 0;
     to_binary(deriv, &size, &error);
     
-    double x = 0.5;
+    double x = 7.5;
     printf("f(%g) =       %.17g\n", x, evaluate(e, x));
     printf("f_simp(%g) =  %.17g\n", x, evaluate(simplified, x));
     printf("f'(%g) =      %.17g\n", x, evaluate(deriv, x));
