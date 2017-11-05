@@ -57,7 +57,9 @@ void main(void) {
     	uint8_t *deriv_data;
     	unsigned deriv_data_size;
 
-		printText(0, 0, "Calculating...");
+		printText(0, 0, "Solver by Nathan Farlow");
+
+		printText(0, 2, "Calculating...");
 
     	data = ti_GetDataPtr(y1);
     	size = ti_GetSize(y1);
@@ -69,7 +71,7 @@ void main(void) {
     	e = parse(&t, &error);
 
     	if(error != E_SUCCESS) {
-    		printText(0, 1, "Error parsing: syntax error.");
+    		printText(0, 3, "Error parsing: syntax error.");
     		goto err;
     	}
 
@@ -80,7 +82,7 @@ void main(void) {
     	ast_Cleanup(simplified);
 
     	if(error != E_SUCCESS) {
-    		printText(0, 1, "Error calculating derivative.");
+    		printText(0, 3, "Error calculating derivative.");
     		goto err;
     	}
 
@@ -98,12 +100,14 @@ void main(void) {
     	free(deriv_data);
 
     } else {
-    	printText(0, 4, "Couldn't open.");
+    	printText(0, 2, "Couldn't open equation.");
     }
 
-    printText(0, 1, "Done.");
+    printText(0, 3, "Done.");
 err:
     while(!os_GetCSC());
+    //TODO:
+	//_YEquOnOff                 equ 0021044h
     _OS(asm_ClrTxtShd);
 }
 
