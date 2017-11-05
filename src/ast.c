@@ -4,6 +4,7 @@
 #include <string.h> //for memcpy
 #include <stdio.h> //for sprintf
 
+#include "util.h"
 #include "system.h"
 
 double num_ToDouble(num_t num) {
@@ -18,7 +19,7 @@ num_t num_FromDouble(double d) {
     num_t ret;
 
 #ifdef __TICE__
-    sprintf(buffer, "%.17g", d);
+    dtoa(buffer, d);
 #else
     sprintf_s(buffer, sizeof(buffer), "%.17g", d);
 #endif
@@ -123,6 +124,19 @@ ast_t *ast_Copy(ast_t *e) {
     }
 
     return ret;
+}
+
+unsigned ast_CountNodes(ast_t *e) {
+    switch (e->type) {
+    case NODE_NUMBER:
+    case NODE_SYMBOL:
+        return 1;
+    case NODE_UNARY:
+        return 1 + ast_CountNodes(e->op.unary.operand);
+    case NODE_BINARY:
+        return 2 + ast_CountNodes(e->op.binary.left) + ast_CountNodes(e->op.binary.right);
+    }
+    return 0;
 }
 
 void ast_Cleanup(ast_t *e) {

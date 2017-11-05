@@ -61,7 +61,7 @@ void tokenizer_Cleanup(tokenizer_t *t) {
 #define is_num(byte) ((byte >= 0x30 && byte <= 0x39) || byte == CHAR_PERIOD) /*'0' through '.'*/
 #define is_one_byte_symbol(byte) ((byte >= 'A' && byte <= 'Z') || byte == SYMBOL_THETA || byte ==  SYMBOL_PI) /*A through Z, theta, pi. does not include 'e'*/
 
-#define is_tok_binary_operator(tok) (tok >= TOK_ADD && tok <= TOK_CUBE)
+#define is_tok_binary_operator(tok) (tok >= TOK_ADD && tok <= TOK_ROOT)
 #define is_tok_unary_operator(tok) (tok >= TOK_NEGATE && tok <= TOK_CUBE)
 
 #define is_tok_binary_function(tok) (tok == TOK_LOG_BASE)
@@ -305,7 +305,16 @@ ast_t *parse(tokenizer_t *t, Error *error) {
             stack_Push(&operators, tok);
         }
         else if (tok->type == TOK_NUMBER || tok->type == TOK_SYMBOL) {
-            stack_Push(&expressions, tok->type == TOK_NUMBER ? ast_MakeNumber(num_Copy(tok->op.number)) : ast_MakeSymbol(tok->op.symbol));
+            //Due to a CRITICAL compiler bug, we have to create an instance
+            //of this variable because it cannot handle these sorts of nested
+            //functions apparently. rip my time spent debugging
+            if (tok->type == TOK_NUMBER) {
+                num_t num = num_Copy(tok->op.number);
+                stack_Push(&expressions, ast_MakeNumber(num));
+            }
+            else {
+                stack_Push(&expressions, ast_MakeSymbol(tok->op.symbol));
+            }
 
             //detect if we are multiplying without the *
             if (i + 1 < t->amount) {
@@ -375,7 +384,7 @@ ast_t *parse(tokenizer_t *t, Error *error) {
     return root;
 }
 
-#define add_byte(byte) if(data != NULL) data[index++] = byte;
+#define add_byte(byte) {if(data != NULL) data[index] = byte; index++;}
 #define add_num(num) {unsigned i; for(i = 0; i < num.length; i++) add_byte(num.number[i]);}
 #define add_token(tok) {unsigned i; for(i = 0; i < identifiers[tok].length; i++) add_byte(identifiers[tok].bytes[i]);}
 
@@ -384,6 +393,8 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
     switch (e->type) {
 
     case NODE_NUMBER: {
+        if (e->op.number.length == 2)
+            data = data;
         add_num(e->op.number);
         break;
     } case NODE_SYMBOL:
@@ -399,7 +410,9 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
         }
         else {
             //if we need parentheses around operand
-            bool paren = precedence_node(e->op.unary.operand) < precedence_node(e);
+            bool paren = is_tok_unary_operator(e->op.unary.operand->type) && 
+                (identifiers[type].direction == RIGHT && precedence_node(e->op.unary.operand) < precedence_node(e)
+                    || (identifiers[type].direction == LEFT && precedence_node(e->op.unary.operand) <= precedence_node(e)));
 
             //TODO: Check if we need parentheses around 10^x and e^x
 
@@ -414,15 +427,14 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
             if (paren)
                 add_token(TOK_CLOSE_PAR);
 
-            if (identifiers[type].direction == LEFT) {
+            if (identifiers[type].direction == LEFT)
                 add_token(type);
+            if (identifiers[type].direction == RIGHT)
+                add_token(type);
+        }
 
-                if (identifiers[type].direction == RIGHT)
-                    add_token(type);
-            }
-
-            break;
-        } case NODE_BINARY: {
+        break;
+    } case NODE_BINARY: {
             TokenType type = e->op.binary.operator;
 
             if (is_tok_binary_function(type)) {
@@ -436,16 +448,17 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 //if we need parentheses around operands
                 bool paren_left, paren_right;
 
-                paren_left = precedence_node(e->op.binary.left) < precedence_node(e);
-                paren_right = precedence_node(e->op.binary.right) < precedence_node(e);
+                paren_left = is_tok_binary_operator(e->op.binary.left->type) && precedence_node(e->op.binary.left) < precedence_node(e);
+                paren_right = is_tok_binary_operator(e->op.binary.right->type) && precedence_node(e->op.binary.right) <= precedence_node(e);
 
                 //We always need parentheses around fractions
-                paren_left |= paren_right |= type == TOK_FRACTION;
+                paren_left |= type == TOK_FRACTION;
+                paren_right |= type == TOK_FRACTION;
 
                 //We need parentheses if the token is power and the exponent is
                 //something other than a number or symbol
                 paren_right |= type == TOK_POWER
-                                && amount_nodes(e->op.binary.right) > 1;
+                                && ast_CountNodes(e->op.binary.right) > 1;
 
                 if (paren_left)
                     add_token(TOK_OPEN_PAR);
@@ -466,7 +479,7 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
             break;
         }
     }
-    }
+
 	return index;
 }
 
@@ -486,17 +499,4 @@ uint8_t *to_binary(ast_t *e, unsigned *size, Error *error) {
 	
 	*size = 0;
 	return NULL;
-}
-
-unsigned amount_nodes(ast_t *e) {
-    switch (e->type) {
-    case NODE_NUMBER:
-    case NODE_SYMBOL:
-        return 1;
-    case NODE_UNARY:
-        return 1 + amount_nodes(e->op.unary.operand);
-    case NODE_BINARY:
-        return 2 + amount_nodes(e->op.binary.left) + amount_nodes(e->op.binary.right);
-    }
-    return -1;
 }

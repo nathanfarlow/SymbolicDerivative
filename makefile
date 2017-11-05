@@ -8,12 +8,12 @@
 # ----------------------------
 
 NAME        ?= DERIV
-DEBUGMODE   ?= NDEBUG
-COMPRESSED  ?= NO
+DEBUGMODE   ?= DEBUG
+COMPRESSED  ?= YES
 ICON        ?= iconc.png
 DESCRIPTION ?= "Solve derivatives"
 
-#L ?= fileioc graphx keypadc
+L ?= fileioc
 
 # ----------------------------
 # Specify source and output locations

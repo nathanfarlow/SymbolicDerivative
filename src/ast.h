@@ -108,6 +108,8 @@ ast_t *ast_MakeBinary(TokenType operator, ast_t *left, ast_t *right);
 
 ast_t *ast_Copy(ast_t *e);
 
+unsigned ast_CountNodes(ast_t *e);
+
 void ast_Cleanup(ast_t *e);
 
 //since 'e' uses an extension byte, we represent it as 0x01 in char symbol

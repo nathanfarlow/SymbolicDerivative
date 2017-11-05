@@ -25,8 +25,6 @@ Error tokenize(tokenizer_t *t, const uint8_t *equation, unsigned length);
 ast_t *parse(tokenizer_t *t, Error *error);
 uint8_t *to_binary(ast_t *e, unsigned *size, Error *error);
 
-unsigned amount_nodes(ast_t *e);
-
 //there can be only 2 bytes, one is extended byte
 #define IDENTIFIER_MAX_BYTES 2
 

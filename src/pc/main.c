@@ -64,6 +64,9 @@ int main(int argc, const char **argv) {
         printf("Simplify error: unable to simplify derivative.\n");
         return -1;
     }
+
+    unsigned size = 0;
+    to_binary(deriv, &size, &error);
     
     double x = 0.5;
     printf("f(%g) =       %.17g\n", x, evaluate(e, x));
@@ -71,10 +74,12 @@ int main(int argc, const char **argv) {
     printf("f'(%g) =      %.17g\n", x, evaluate(deriv, x));
     printf("f'_simp(%g) = %.17g\n", x, evaluate(simplified_derivative, x));
 
-    printf("\nsize of f(x):       %i\n", amount_nodes(e));
-    printf("size of f_simp(x):  %i\n", amount_nodes(simplified));
-    printf("size of f'(x):      %i\n", amount_nodes(e));
-    printf("size of f'_simp(x): %i\n", amount_nodes(e));
+    printf("\nsize of f(x):       %i\n", ast_CountNodes(e));
+    printf("size of f_simp(x):  %i\n", ast_CountNodes(simplified));
+    printf("size of f'(x):      %i\n", ast_CountNodes(deriv));
+    printf("size of f'_simp(x): %i\n", ast_CountNodes(simplified_derivative));
+
+    printf("\nBinary size: %i", size);
 
     if (evaluate(e, x) != evaluate(simplified, x))
         printf("\nWARNING: Simplified expression does not equal the original at %g\n", x);
