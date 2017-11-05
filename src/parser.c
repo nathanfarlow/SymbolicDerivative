@@ -384,6 +384,22 @@ ast_t *parse(tokenizer_t *t, Error *error) {
     return root;
 }
 
+bool is_ast_of_token(ast_t *e, TokenType tok) {
+    if(e == NULL)
+        return false;
+    switch(identifiers[tok].node_type) {
+    case NODE_NUMBER:
+    case NODE_SYMBOL:
+        return e->type == identifiers[tok].node_type;
+    case NODE_UNARY:
+        return e->op.unary.operator == tok;
+    case NODE_BINARY:
+        return e->op.binary.operator == tok;
+    }
+
+    return false;
+}
+
 #define add_byte(byte) {if(data != NULL) data[index] = byte; index++;}
 #define add_num(num) {unsigned i; for(i = 0; i < num.length; i++) add_byte(num.number[i] == '.' ? CHAR_PERIOD : num.number[i]);}
 #define add_token(tok) {unsigned i; for(i = 0; i < identifiers[tok].length; i++) add_byte(identifiers[tok].bytes[i]);}
@@ -427,6 +443,7 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
             
             if (identifiers[type].direction == RIGHT)
                 add_token(type);
+
         }
 
         break;
@@ -463,7 +480,7 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 if (paren_left)
                     add_token(TOK_CLOSE_PAR);
 
-                if(!(type == TOK_MULTIPLY && ((precedence_node(e->op.binary.right) >= precedence_node(e)
+                if(!(type == TOK_MULTIPLY && ((precedence_node(e->op.binary.right) > precedence_node(e)
                     && !(e->op.binary.right->type == NODE_UNARY && e->op.binary.right->op.unary.operator == TOK_NEGATE))
                     && !(e->op.binary.right->type == NODE_BINARY && e->op.binary.right->op.binary.left->type == TOK_NUMBER)
                      || e->op.binary.right->type == TOK_SYMBOL)))

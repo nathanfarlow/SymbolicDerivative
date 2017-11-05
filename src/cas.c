@@ -30,9 +30,10 @@ bool is_constant(ast_t *e) {
 ast_t *simplify(ast_t *e) {
     ast_t *simplified = NULL, *target, *ret;
 
-    num_t num_value_0, num_value_1;
+    num_t num_value_0, num_value_1, num_value_10;
     num_value_0 = num_Create("0");
     num_value_1 = num_Create("1");
+    num_value_10 = num_Create("10");
 
     switch (e->type) {
     case NODE_NUMBER:
@@ -91,6 +92,9 @@ ast_t *simplify(ast_t *e) {
                 simplified = ast_MakeNumber(num_value_1);
             else if (is_val(op, 1))
                 simplified = ast_Copy(op);
+            simplified = ast_MakeBinary(TOK_POWER,
+                ast_MakeNumber(num_value_10),
+                ast_Copy(op));
             break;
 
         //TODO: pi
@@ -536,9 +540,12 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                 //instead, we're going to rewrite it as 10^() and find
                 //its derivative
 
+                n[0] = num_Create("10");
+
                 temp = ast_MakeBinary(TOK_MULTIPLY,
                     ast_Copy(left),
-                    ast_MakeUnary(TOK_10_TO_POWER,
+                    ast_MakeBinary(TOK_POWER,
+                        ast_MakeNumber(n[0]),
                         ast_Copy(right)));
 
                     ret = derivative(temp, symbol, error);
