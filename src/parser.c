@@ -69,6 +69,23 @@ void tokenizer_Cleanup(tokenizer_t *t) {
 
 #define is_tok_function(tok) (is_tok_unary_function(tok) || is_tok_binary_function(tok))
 
+bool is_ast_function(ast_t *e) {
+    if(e == NULL)
+        return false;
+
+    switch(e->type) {
+    case NODE_NUMBER:
+    case NODE_SYMBOL:
+        return false;
+    case NODE_UNARY:
+        return is_tok_function(e->op.unary.operator);
+    case NODE_BINARY:
+        return is_tok_function(e->op.binary.operator);
+    }
+
+    return false;
+}
+
 //algorithm that returns a token by using the identifiers array
 TokenType read_identifier(const uint8_t *equation, unsigned index, unsigned length) {
     unsigned identifier_index;
@@ -469,7 +486,7 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
 
                 paren_left = e->op.binary.left->type == NODE_BINARY && is_tok_binary_operator(e->op.binary.left->op.binary.operator) && precedence_node(e->op.binary.left) < precedence_node(e);
                 paren_right = e->op.binary.right->type == NODE_BINARY && is_tok_binary_operator(e->op.binary.right->op.binary.operator) 
-                && (precedence_node(e->op.binary.right) <= precedence_node(e) && !(type == TOK_MULTIPLY && e->op.binary.right->op.binary.operator == TOK_MULTIPLY));
+                && (precedence_node(e->op.binary.right) <= precedence_node(e) && !(type == TOK_MULTIPLY && is_ast_of_token(e->op.binary.right, TOK_MULTIPLY)));
 
                 //We always need parentheses around fractions
                 paren_left |= type == TOK_FRACTION;
@@ -485,11 +502,13 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 index = _to_binary(e->op.binary.left, data, index, error);
                 if (paren_left)
                     add_token(TOK_CLOSE_PAR);
-
-                if(!(type == TOK_MULTIPLY && ((precedence_node(e->op.binary.right) > precedence_node(e)
-                    && !(e->op.binary.right->type == NODE_UNARY && e->op.binary.right->op.unary.operator == TOK_NEGATE))
-                    && !(e->op.binary.right->type == NODE_BINARY && e->op.binary.right->op.binary.left->type == TOK_NUMBER)
-                     || e->op.binary.right->type == TOK_SYMBOL)))
+                
+                if(!(type == TOK_MULTIPLY && (
+                    !(paren_right || paren_left)
+                    || ((e->op.binary.left->type == TOK_NUMBER && e->op.binary.right->type == TOK_SYMBOL)
+                        || (e->op.binary.left->type == TOK_SYMBOL && e->op.binary.right->type == TOK_NUMBER))
+                    )
+                    && !is_ast_of_token(e->op.binary.right, TOK_NEGATE)))
                     add_token(type);
 
                 if (paren_right)
