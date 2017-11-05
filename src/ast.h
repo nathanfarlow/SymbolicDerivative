@@ -10,7 +10,7 @@ typedef struct _Num {
 } num_t;
 
 double num_ToDouble(num_t num);
-num_t num_FromDouble(double d);
+num_t num_Create(const char *number);
 num_t num_Copy(num_t num);
 
 bool num_IsInteger(num_t num);

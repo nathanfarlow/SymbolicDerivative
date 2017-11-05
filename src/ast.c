@@ -4,7 +4,6 @@
 #include <string.h> //for memcpy
 #include <stdio.h> //for sprintf
 
-#include "util.h"
 #include "system.h"
 
 double num_ToDouble(num_t num) {
@@ -13,21 +12,17 @@ double num_ToDouble(num_t num) {
     memcpy(buffer, num.number, num.length);
     return atof(buffer);
 }
-
-num_t num_FromDouble(double d) {
-    char buffer[20] = { 0 };
+num_t num_Create(const char *number) {
     num_t ret;
 
-#ifdef __TICE__
-    dtoa(buffer, d);
-#else
-    sprintf_s(buffer, sizeof(buffer), "%.17g", d);
-#endif
-
-    ret.length = (uint16_t)strlen(buffer);
+    ret.length = (uint16_t)strlen(number);
     ret.number = malloc(ret.length);
 
-    memcpy(ret.number, buffer, ret.length);
+#ifdef __TICE__
+    memcpy(ret.number, number, ret.length);
+#else
+    memcpy_s(ret.number, ret.length, number, ret.length);
+#endif
 
     return ret;
 }

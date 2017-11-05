@@ -39,50 +39,50 @@ ast_t *simplify(ast_t *e) {
         switch (e->op.unary.operator) {
         case TOK_NEGATE:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             break;
         case TOK_RECRIPROCAL:
             //TODO: trig identities
             if (is_val(op, 1))
-                simplified = ast_MakeNumber(num_FromDouble(1));
+                simplified = ast_MakeNumber(num_Create("1"));
             break;
         case TOK_SQUARE:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             break;
         case TOK_CUBE:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             break;
         case TOK_INT:
         case TOK_ABS:
             break;
         case TOK_SQRT:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             break;
         case TOK_CUBED_ROOT:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             break;
         case TOK_LN:
             if (is_val(op, M_E))
-                simplified = ast_MakeNumber(num_FromDouble(1));
+                simplified = ast_MakeNumber(num_Create("1"));
             break;
         case TOK_E_TO_POWER:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_FromDouble(1));
+                simplified = ast_MakeNumber(num_Create("1"));
             else if (is_val(op, 1))
                 simplified = ast_Copy(op);
             break;
         case TOK_LOG:
             if (is_val(op, 1))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             else if (is_val(op, 10))
-                simplified = ast_MakeNumber(num_FromDouble(1));
+                simplified = ast_MakeNumber(num_Create("1"));
         case TOK_10_TO_POWER:
             if (is_val(op, 0))
-                simplified = ast_MakeNumber(num_FromDouble(1));
+                simplified = ast_MakeNumber(num_Create("1"));
             else if (is_val(op, 1))
                 simplified = ast_Copy(op);
             break;
@@ -123,23 +123,23 @@ ast_t *simplify(ast_t *e) {
             break;
         case TOK_MULTIPLY:
             if (is_val(left, 0) || is_val(right, 0))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             break;
         case TOK_DIVIDE:
         case TOK_FRACTION:
             //TODO: trig identities
             if (is_val(left, 0))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             else if (is_val(right, 1))
                 simplified = ast_Copy(right);
             break;
         case TOK_POWER:
             if (is_val(left, 0))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             else if (is_val(left, 1))
-                simplified = ast_MakeNumber(num_FromDouble(1));
+                simplified = ast_MakeNumber(num_Create("1"));
             else if (is_val(right, 0))
-                simplified = ast_MakeNumber(num_FromDouble(1));
+                simplified = ast_MakeNumber(num_Create("1"));
             else if (is_val(right, 1))
                 simplified = ast_Copy(left);
             break;
@@ -147,16 +147,16 @@ ast_t *simplify(ast_t *e) {
             if (is_val(left, 1))
                 simplified = ast_Copy(right);
             else if(is_val(right, 0))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             else if (is_val(right, 1))
-                simplified = ast_MakeNumber(num_FromDouble(1));
+                simplified = ast_MakeNumber(num_Create("1"));
             break;
         case TOK_LOG_BASE:
             if (is_val(left, 1))
-                simplified = ast_MakeNumber(num_FromDouble(0));
+                simplified = ast_MakeNumber(num_Create("0"));
             else if (is_constant(left) && is_constant(right)
                 && evaluate(left, 0) == evaluate(right, 0))
-                simplified = ast_MakeNumber(num_FromDouble(1));
+                simplified = ast_MakeNumber(num_Create("1"));
             break;
         }
 
@@ -190,18 +190,18 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
     *error = E_SUCCESS;
 
     if (is_constant(e)) {
-        n[0] = num_FromDouble(0);
+        n[0] = num_Create("0");
         ret = ast_MakeNumber(n[0]);
     }
     else {
         switch (e->type) {
         case NODE_NUMBER:
-            n[0] = num_FromDouble(0);
+            n[0] = num_Create("0");
             ret = ast_MakeNumber(n[0]);
             break;
         case NODE_SYMBOL:
-            n[0] = num_FromDouble(0);
-            n[1] = num_FromDouble(1);
+            n[0] = num_Create("0");
+            n[1] = num_Create("1");
 
             if (e->op.symbol == SYMBOL_PI
                 || e->op.symbol == SYMBOL_E
@@ -224,13 +224,13 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                             ast_Copy(op))));
                 break;
             case TOK_SQUARE:
-                n[0] = num_FromDouble(2);
+                n[0] = num_Create("2");
                 ret = chain(ast_MakeBinary(TOK_MULTIPLY,
                     ast_MakeNumber(n[0]),
                     ast_Copy(op)), op);
                 break;
             case TOK_CUBE:
-                n[0] = num_FromDouble(3);
+                n[0] = num_Create("3");
                 ret = chain(ast_MakeBinary(TOK_MULTIPLY,
                     ast_MakeNumber(n[0]),
                     ast_MakeUnary(TOK_SQUARE,
@@ -247,10 +247,10 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                         ast_Copy(op))), op);
                 break;
             case TOK_SQRT:
-                n[0] = num_FromDouble(1);
-                n[1] = num_FromDouble(2);
-                n[2] = num_FromDouble(1);
-                n[3] = num_FromDouble(2);
+                n[0] = num_Create("1");
+                n[1] = num_Create("2");
+                n[2] = num_Create("1");
+                n[3] = num_Create("2");
 
                 ret = chain(ast_MakeBinary(TOK_MULTIPLY,
                     ast_MakeBinary(TOK_FRACTION,
@@ -264,10 +264,10 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                                 ast_MakeNumber(n[3]))))), op);
                 break;
             case TOK_CUBED_ROOT:
-                n[0] = num_FromDouble(1);
-                n[1] = num_FromDouble(3);
-                n[2] = num_FromDouble(2);
-                n[3] = num_FromDouble(3);
+                n[0] = num_Create("1");
+                n[1] = num_Create("3");
+                n[2] = num_Create("2");
+                n[3] = num_Create("3");
 
                 ret = chain(ast_MakeBinary(TOK_MULTIPLY,
                     ast_MakeBinary(TOK_FRACTION,
@@ -281,7 +281,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                                 ast_MakeNumber(n[3]))))), op);
                 break;
             case TOK_LN:
-                n[0] = num_FromDouble(1);
+                n[0] = num_Create("1");
 
                 ret = chain(ast_MakeBinary(TOK_FRACTION,
                     ast_MakeNumber(n[0]),
@@ -291,8 +291,8 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                 return chain(ast_MakeUnary(TOK_E_TO_POWER,
                     ast_Copy(op)), op);
             case TOK_LOG:
-                n[0] = num_FromDouble(1);
-                n[1] = num_FromDouble(10);
+                n[0] = num_Create("1");
+                n[1] = num_Create("10");
 
                 ret = chain(ast_MakeBinary(TOK_DIVIDE,
                     ast_MakeNumber(n[0]),
@@ -300,10 +300,9 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                         ast_Copy(op),
                         ast_MakeUnary(TOK_LN,
                             ast_MakeNumber(n[1])))), op);
-                //dbg_sprintf(dbgout, "%i\n", n[1].length);
                 break;
             case TOK_10_TO_POWER: {
-                n[0] = num_FromDouble(10);
+                n[0] = num_Create("10");
 
                 temp = ast_MakeBinary(TOK_MULTIPLY,
                     ast_MakeUnary(TOK_LN,
@@ -323,7 +322,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                     ast_Copy(op)), op);
                 break;
             case TOK_SIN_INV:
-                n[0] = num_FromDouble(1);
+                n[0] = num_Create("1");
 
                 ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
                     ast_MakeUnary(TOK_SQRT,
@@ -338,7 +337,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                         ast_Copy(op))), op);
                 break;
             case TOK_COS_INV:
-                n[0] = num_FromDouble(1);
+                n[0] = num_Create("1");
 
                 ret = chain(ast_MakeUnary(TOK_NEGATE,
                     ast_MakeUnary(TOK_RECRIPROCAL,
@@ -355,7 +354,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                             ast_Copy(op)))), op);
                 break;
             case TOK_TAN_INV:
-                n[0] = num_FromDouble(1);
+                n[0] = num_Create("1");
 
                 ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
                     ast_MakeBinary(TOK_ADD,
@@ -368,7 +367,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                     ast_Copy(op)), op);
                 break;
             case TOK_SINH_INV:
-                n[0] = num_FromDouble(1);
+                n[0] = num_Create("1");
 
                 ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
                     ast_MakeUnary(TOK_SQRT,
@@ -382,7 +381,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                     ast_Copy(op)), op);
                 break;
             case TOK_COSH_INV:
-                n[0] = num_FromDouble(1);
+                n[0] = num_Create("1");
 
                 ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
                     ast_MakeUnary(TOK_SQRT,
@@ -398,7 +397,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                             ast_Copy(op)))), op);
                 break;
             case TOK_TANH_INV:
-                n[0] = num_FromDouble(1);
+                n[0] = num_Create("1");
 
                 ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
                     ast_MakeBinary(TOK_SUBTRACT,
@@ -448,7 +447,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                     ast_MakeUnary(TOK_SQUARE, ast_Copy(right)));
                 break;
             case TOK_POWER: {
-                n[0] = num_FromDouble(1);
+                n[0] = num_Create("1");
 
                 if (is_constant(right)) {
                     ret = chain(ast_MakeBinary(TOK_MULTIPLY,
@@ -495,8 +494,8 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
 
                 ast_t *rewritten_exponent;
 
-                n[0] = num_FromDouble(1);
-                n[1] = num_FromDouble(1);
+                n[0] = num_Create("1");
+                n[1] = num_Create("1");
 
                 rewritten_exponent = ast_MakeBinary(TOK_FRACTION,
                     ast_MakeNumber(n[0]),
@@ -529,8 +528,8 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                 break;
             } case TOK_LOG_BASE: {
 
-                n[0] = num_FromDouble(1);
-                n[1] = num_FromDouble(1);
+                n[0] = num_Create("1");
+                n[1] = num_Create("1");
 
                 if (right->type == NODE_SYMBOL && right->op.symbol == SYMBOL_E) {
                     ret = ast_MakeBinary(TOK_FRACTION,
