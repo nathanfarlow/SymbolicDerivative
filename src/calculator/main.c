@@ -77,6 +77,7 @@ void main(void) {
     printText(0, 1, "Done.");
 err:
     while(!os_GetCSC());
+    _OS(asm_ClrTxtShd);
 }
 
 void printText(int8_t xpos, int8_t ypos, const char *text) {

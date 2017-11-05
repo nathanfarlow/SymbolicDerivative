@@ -529,33 +529,23 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
             } case TOK_LOG_BASE: {
 
                 n[0] = num_Create("1");
-                n[1] = num_Create("1");
-
+                
                 if (right->type == NODE_SYMBOL && right->op.symbol == SYMBOL_E) {
                     ret = ast_MakeBinary(TOK_FRACTION,
                         ast_MakeNumber(n[0]),
                         ast_Copy(left));
                 }
                 else {
-                    if (is_constant(right)) {
-                        ret = chain(ast_MakeBinary(TOK_DIVIDE,
-                            ast_MakeNumber(n[1]),
-                            ast_MakeBinary(TOK_MULTIPLY,
-                                ast_Copy(left),
-                                ast_MakeUnary(TOK_LN,
-                                    ast_Copy(right)))), left);
-                    }
-                    else {
-                        temp = ast_MakeBinary(TOK_FRACTION,
-                            ast_MakeUnary(TOK_LN,
-                                ast_Copy(left)),
-                            ast_MakeUnary(TOK_LN,
-                                ast_Copy(right)));
+                    
+                    temp = ast_MakeBinary(TOK_FRACTION,
+                        ast_MakeUnary(TOK_LN,
+                            ast_Copy(left)),
+                        ast_MakeUnary(TOK_LN,
+                            ast_Copy(right)));
 
-                        ret = derivative(temp, symbol, error);
+                    ret = derivative(temp, symbol, error);
 
-                        ast_Cleanup(temp);
-                    }
+                    ast_Cleanup(temp);
                 }
 
                 break;
