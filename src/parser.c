@@ -426,9 +426,7 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
 
             if (paren)
                 add_token(TOK_CLOSE_PAR);
-
-            if (identifiers[type].direction == LEFT)
-                add_token(type);
+            
             if (identifiers[type].direction == RIGHT)
                 add_token(type);
         }
