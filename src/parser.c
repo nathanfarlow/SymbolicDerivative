@@ -463,7 +463,10 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 if (paren_left)
                     add_token(TOK_CLOSE_PAR);
 
-                if(!(type == TOK_MULTIPLY && ((precedence_node(e->op.binary.right) >= precedence_node(e) && !(e->op.binary.right->type == NODE_UNARY && e->op.binary.right->op.unary.operator == TOK_NEGATE)) || e->op.binary.right->type == TOK_SYMBOL)))
+                if(!(type == TOK_MULTIPLY && ((precedence_node(e->op.binary.right) >= precedence_node(e)
+                    && !(e->op.binary.right->type == NODE_UNARY && e->op.binary.right->op.unary.operator == TOK_NEGATE))
+                    && !(e->op.binary.right->type == NODE_BINARY && e->op.binary.right->op.binary.left->type == TOK_NUMBER)
+                     || e->op.binary.right->type == TOK_SYMBOL)))
                     add_token(type);
 
                 if (paren_right)

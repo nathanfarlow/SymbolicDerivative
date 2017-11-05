@@ -120,7 +120,7 @@ ast_t *simplify(ast_t *e) {
                 simplified = ast_Copy(right);
             else if (is_val(right, 0))
                 simplified = ast_Copy(left);
-            else if(left->type == NODE_NUMBER  && right->type == NODE_NUMBER
+            else if(left->type == NODE_NUMBER && right->type == NODE_NUMBER
                 && num_IsInteger(left->op.number) && num_IsInteger(right->op.number)
                 && left->op.number.length <= 10 && right->op.number.length <= 10) {
                 char buffer[50];
@@ -136,7 +136,7 @@ ast_t *simplify(ast_t *e) {
                 simplified = ast_MakeUnary(TOK_NEGATE, ast_Copy(right));
             else if (is_val(right, 0))
                 simplified = ast_Copy(left);
-            else if(left->type == NODE_NUMBER  && right->type == NODE_NUMBER
+            else if(left->type == NODE_NUMBER && right->type == NODE_NUMBER
                 && num_IsInteger(left->op.number) && num_IsInteger(right->op.number)
                 && left->op.number.length <= 10 && right->op.number.length <= 10) {
                 char buffer[50];
@@ -154,9 +154,10 @@ ast_t *simplify(ast_t *e) {
                 simplified = ast_Copy(right);
             else if(is_val(right, 1))
                 simplified = ast_Copy(left);
-            else if(left->type == NODE_NUMBER  && right->type == NODE_NUMBER
+            else if(left->type == NODE_NUMBER && right->type == NODE_NUMBER
                 && num_IsInteger(left->op.number) && num_IsInteger(right->op.number)
                 && left->op.number.length <= 10 && right->op.number.length <= 10) {
+                //can be better simplified by using n-ary instead of binary
                 char buffer[50];
                 num_t num;
                 int result = evaluate(e, 0);
