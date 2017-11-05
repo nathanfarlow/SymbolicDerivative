@@ -412,7 +412,15 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
         add_num(e->op.number);
         break;
     } case NODE_SYMBOL:
-        add_byte(e->op.symbol);
+        if(e->op.symbol == SYMBOL_E) {
+            //the extended code for e
+            add_byte(0xBB);
+            add_byte(0x31);
+        }
+        else {
+            add_byte(e->op.symbol);
+        }
+        
         break;
     case NODE_UNARY: {
         TokenType type = e->op.unary.operator;
@@ -427,8 +435,6 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
             bool paren = is_tok_unary_operator(e->op.unary.operand->type) && 
                 (identifiers[type].direction == RIGHT && precedence_node(e->op.unary.operand) < precedence_node(e)
                     || (identifiers[type].direction == LEFT && precedence_node(e->op.unary.operand) <= precedence_node(e)));
-
-            //TODO: Check if we need parentheses around 10^x and e^x
 
             if (identifiers[type].direction == LEFT)
                 add_token(type);
