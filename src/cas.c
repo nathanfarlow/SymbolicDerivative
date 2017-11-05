@@ -229,7 +229,7 @@ ast_t *simplify(ast_t *e) {
 }
 
 #define needs_chain(ast) (!is_constant(ast) && ast->type != NODE_SYMBOL)
-#define chain(ast, inner) (needs_chain(ast) ? ast_MakeBinary(TOK_MULTIPLY, ast, derivative(inner, symbol, error)) : ast)
+#define chain(ast, inner) (needs_chain(ast) ? ast_MakeBinary(TOK_MULTIPLY, derivative(inner, symbol, error), ast) : ast)
 
 ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
     ast_t *ret = NULL, *temp = NULL;

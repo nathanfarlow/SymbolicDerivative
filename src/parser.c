@@ -216,11 +216,9 @@ uint8_t precedence(TokenType type) {
     switch (type) {
     case TOK_ADD: case TOK_SUBTRACT:
         return 5;
-    case TOK_MULTIPLY:
+    case TOK_MULTIPLY: case TOK_NEGATE:
     case TOK_DIVIDE: case TOK_FRACTION:
         return 10;
-    case TOK_NEGATE:
-        return 11;
     case TOK_POWER: case TOK_RECRIPROCAL:
     case TOK_SQUARE: case TOK_CUBE:
     case TOK_ROOT:
@@ -465,7 +463,7 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 if (paren_left)
                     add_token(TOK_CLOSE_PAR);
 
-                if(!(type == TOK_MULTIPLY && (precedence_node(e->op.binary.right) >= precedence_node(e) || e->op.binary.right->type == TOK_SYMBOL)))
+                if(!(type == TOK_MULTIPLY && ((precedence_node(e->op.binary.right) >= precedence_node(e) && !(e->op.binary.right->type == NODE_UNARY && e->op.binary.right->op.unary.operator == TOK_NEGATE)) || e->op.binary.right->type == TOK_SYMBOL)))
                     add_token(type);
 
                 if (paren_right)
