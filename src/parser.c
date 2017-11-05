@@ -385,7 +385,7 @@ ast_t *parse(tokenizer_t *t, Error *error) {
 }
 
 #define add_byte(byte) {if(data != NULL) data[index] = byte; index++;}
-#define add_num(num) {unsigned i; for(i = 0; i < num.length; i++) add_byte(num.number[i]);}
+#define add_num(num) {unsigned i; for(i = 0; i < num.length; i++) add_byte(num.number[i] == '.' ? CHAR_PERIOD : num.number[i]);}
 #define add_token(tok) {unsigned i; for(i = 0; i < identifiers[tok].length; i++) add_byte(identifiers[tok].bytes[i]);}
 
 unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
