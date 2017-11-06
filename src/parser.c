@@ -418,8 +418,23 @@ bool is_ast_of_token(ast_t *e, TokenType tok) {
 }
 
 #define add_byte(byte) {if(data != NULL) data[index] = byte; index++;}
-#define add_num(num) {unsigned i; for(i = 0; i < num.length; i++) add_byte(num.number[i] == '.' ? CHAR_PERIOD : num.number[i]);}
+#define add_num(num) {unsigned i; for(i = 0; i < num.length; i++) add_byte(num.number[i] == '.' ? CHAR_PERIOD : num.number[i] == '-' ? identifiers[TOK_NEGATE].bytes[0] : num.number[i]);}
 #define add_token(tok) {unsigned i; for(i = 0; i < identifiers[tok].length; i++) add_byte(identifiers[tok].bytes[i]);}
+
+ast_t *leftmost(ast_t *e) {
+    switch(e->type) {
+    case NODE_NUMBER:
+    case NODE_SYMBOL:
+    case NODE_UNARY:
+        return e;
+    case NODE_BINARY:
+        if(e->op.binary.operator == TOK_FRACTION || is_tok_binary_function(e->op.binary.operator))
+            return e;
+        return leftmost(e->op.binary.left);
+    }
+
+    return NULL;
+}
 
 unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
 	
@@ -497,24 +512,29 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 paren_right |= type == TOK_POWER
                                 && ast_CountNodes(e->op.binary.right) > 1;
 
+                if(type == TOK_FRACTION)
+                    add_token(TOK_OPEN_PAR);
                 if (paren_left)
                     add_token(TOK_OPEN_PAR);
                 index = _to_binary(e->op.binary.left, data, index, error);
                 if (paren_left)
                     add_token(TOK_CLOSE_PAR);
-                
-                if(!(type == TOK_MULTIPLY && (
-                    !(paren_right || paren_left)
-                    || ((e->op.binary.left->type == TOK_NUMBER && e->op.binary.right->type == TOK_SYMBOL)
-                        || (e->op.binary.left->type == TOK_SYMBOL && e->op.binary.right->type == TOK_NUMBER))
-                    )
-                    && !is_ast_of_token(e->op.binary.right, TOK_NEGATE)))
+
+                if(type != TOK_MULTIPLY || (type == TOK_MULTIPLY && !(
+                    (is_ast_of_token(e->op.binary.right, TOK_MULTIPLY) && leftmost(e->op.binary.right)->type != NODE_NUMBER)
+                    || is_ast_of_token(leftmost(e->op.binary.right), TOK_FRACTION)
+                    || leftmost(e->op.binary.right)->type == NODE_SYMBOL
+                    || (leftmost(e->op.binary.right)->type == NODE_BINARY && is_tok_binary_function(leftmost(e->op.binary.right)->op.binary.operator))
+                    || (leftmost(e->op.binary.right)->type == NODE_UNARY && (is_tok_unary_function(leftmost(e->op.binary.right)->op.unary.operator) || identifiers[leftmost(e->op.binary.right)->op.unary.operator].direction == LEFT))
+                    )))
                     add_token(type);
 
                 if (paren_right)
                     add_token(TOK_OPEN_PAR);
                 index = _to_binary(e->op.binary.right, data, index, error);
                 if (paren_right)
+                    add_token(TOK_CLOSE_PAR);
+                if(type == TOK_FRACTION)
                     add_token(TOK_CLOSE_PAR);
             }
 

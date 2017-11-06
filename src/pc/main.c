@@ -58,8 +58,6 @@ int main(int argc, const char **argv) {
         return -1;
     }
 
-    printf("%g\n\n", pow(-1, 3));
-
     ast_t *simplified_derivative = simplify(deriv);
 
     if (simplified_derivative == NULL) {
