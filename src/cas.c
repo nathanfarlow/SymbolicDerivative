@@ -175,8 +175,9 @@ ast_t *simplify(ast_t *e) {
             //TODO: trig identities
             if (is_val(left, 0))
                 simplified = ast_MakeNumber(num_value_0);
-            else if (is_val(right, 1))
-                simplified = ast_Copy(right);
+            //TODO: Why does this mess up?
+            //if (is_val(right, 1))
+                //simplified = ast_Copy(left);
             break;
         case TOK_POWER:
             if (is_val(left, 0))

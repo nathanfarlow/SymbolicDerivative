@@ -86,8 +86,10 @@ void main(void) {
     		goto err;
     	}
 
-    	simplified_deriv = simplify_amount(deriv, SIMPLIFY_ITERATIONS);
+    	simplified_deriv = 
+    	simplify_amount(deriv, SIMPLIFY_ITERATIONS);
     	ast_Cleanup(deriv);
+    	//deriv;
 
     	deriv_data = to_binary(simplified_deriv, &deriv_data_size, &error);
     	ast_Cleanup(simplified_deriv);
