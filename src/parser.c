@@ -436,6 +436,8 @@ ast_t *leftmost(ast_t *e) {
     return NULL;
 }
 
+#define is_node_function(node) (node->type == NODE_BINARY ? is_tok_function(node->op.binary.operator) : node->type == NODE_UNARY ? is_tok_function(node->op.unary.operator) : false)
+
 unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
 	
     switch (e->type) {
@@ -469,6 +471,7 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                     || (identifiers[type].direction == LEFT && precedence_node(e->op.unary.operand) <= precedence_node(e)));
 
             paren |= is_tok_binary_operator(e->op.unary.operand->type) && precedence_node(e->op.unary.operand) < precedence_node(e);
+            paren &= !is_node_function(e->op.unary.operand);
 
             if (identifiers[type].direction == LEFT)
                 add_token(type);
@@ -503,11 +506,12 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
 
                 paren_left = e->op.binary.left->type == NODE_BINARY && is_tok_binary_operator(e->op.binary.left->op.binary.operator) && precedence_node(e->op.binary.left) < precedence_node(e);
                 paren_left |= e->op.binary.left->type == NODE_UNARY && is_tok_unary_operator(e->op.binary.left->op.unary.operator) && precedence_node(e->op.binary.left) < precedence_node(e);
+                paren_left &= !is_node_function(e->op.binary.left);
 
                 paren_right = e->op.binary.right->type == NODE_BINARY && is_tok_binary_operator(e->op.binary.right->op.binary.operator) 
                 && (precedence_node(e->op.binary.right) <= precedence_node(e) && !(type == TOK_MULTIPLY && is_ast_of_token(e->op.binary.right, TOK_MULTIPLY)));
-                
                 paren_right |= e->op.binary.right->type == NODE_UNARY && is_tok_unary_operator(e->op.binary.right->op.unary.operator) && precedence_node(e->op.binary.right) < precedence_node(e);
+                paren_right &= !is_node_function(e->op.binary.right);
 
                 //We always need parentheses around fractions
                 paren_left |= type == TOK_FRACTION;
