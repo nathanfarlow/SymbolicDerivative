@@ -25,7 +25,8 @@ bool is_constant(ast_t *e, uint8_t symbol) {
     return false;
 }
 
-#define is_val(ast, val) (is_constant(ast, 0) && evaluate(ast, 0) == val)
+bool can_evaluate(ast_t *e);
+#define is_val(ast, val) (can_evaluate(ast) && evaluate(ast) == val)
 
 ast_t *simplify(ast_t *e) {
     ast_t *simplified = NULL, *target, *ret;
@@ -129,7 +130,7 @@ ast_t *simplify(ast_t *e) {
                 && left->op.number.length <= 10 && right->op.number.length <= 10) {
                 char buffer[50];
                 num_t num;
-                int result = evaluate(e, 0);
+                int result = evaluate(e);
                 sprintf(buffer, "%d", result);
                 num = num_Create(buffer);
                 simplified = ast_MakeNumber(num);
@@ -145,7 +146,7 @@ ast_t *simplify(ast_t *e) {
                 && left->op.number.length <= 10 && right->op.number.length <= 10) {
                 char buffer[50];
                 num_t num;
-                int result = evaluate(e, 0);
+                int result = evaluate(e);
                 sprintf(buffer, "%d", result);
                 num = num_Create(buffer);
                 simplified = ast_MakeNumber(num);
@@ -164,7 +165,7 @@ ast_t *simplify(ast_t *e) {
                 //can be better simplified by using n-ary instead of binary
                 char buffer[50];
                 num_t num;
-                int result = evaluate(e, 0);
+                int result = evaluate(e);
                 sprintf(buffer, "%d", result);
                 num = num_Create(buffer);
                 simplified = ast_MakeNumber(num);
@@ -201,7 +202,7 @@ ast_t *simplify(ast_t *e) {
             if (is_val(left, 1))
                 simplified = ast_MakeNumber(num_value_0);
             else if (is_constant(left, 0) && is_constant(right, 0)
-                && evaluate(left, 0) == evaluate(right, 0))
+                && evaluate(left) == evaluate(right))
                 simplified = ast_MakeNumber(num_value_1);
             break;
         }
@@ -640,7 +641,21 @@ double atanh(double x) {
 }
 #endif
 
-double evaluate(ast_t *e, double default_symbol) {
+bool can_evaluate(ast_t *e) {
+    switch(e->type) {
+        case NODE_NUMBER:
+            return e->op.number.length < 16;
+        case NODE_SYMBOL:
+            return is_constant(e, 0);
+        case NODE_UNARY:
+            return can_evaluate(e->op.unary.operand);
+        case NODE_BINARY:
+            return can_evaluate(e->op.binary.left) && can_evaluate(e->op.binary.right);
+    }
+    return false;
+}
+
+double evaluate(ast_t *e) {
     switch (e->type) {
     case NODE_NUMBER:
         return num_ToDouble(e->op.number);
@@ -654,11 +669,13 @@ double evaluate(ast_t *e, double default_symbol) {
             return M_PI;
             break;
         default:
-            return default_symbol;
+            //TODO: Implement a map for variable values
+            //or throw some error here
+            return -1;
         }
         break;
     case NODE_UNARY: {
-        double x = evaluate(e->op.unary.operand, default_symbol);
+        double x = evaluate(e->op.unary.operand);
 
         switch (e->op.unary.operator) {
         case TOK_NEGATE: return -1 * x;
@@ -693,8 +710,8 @@ double evaluate(ast_t *e, double default_symbol) {
         break;
     } case NODE_BINARY: {
         double left, right;
-        left = evaluate(e->op.binary.left, default_symbol);
-        right = evaluate(e->op.binary.right, default_symbol);
+        left = evaluate(e->op.binary.left);
+        right = evaluate(e->op.binary.right);
 
         switch (e->op.binary.operator) {
         case TOK_ADD: return left + right;
