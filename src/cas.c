@@ -385,11 +385,13 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                 break;
             case TOK_SIN_INV:
                 n[0] = num_Create("1");
+                n[1] = num_Create("1");
 
-                ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ret = chain(ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(n[0]),
                     ast_MakeUnary(TOK_SQRT,
                         ast_MakeBinary(TOK_SUBTRACT,
-                            ast_MakeNumber(n[0]),
+                            ast_MakeNumber(n[1]),
                             ast_MakeUnary(TOK_SQUARE,
                                 ast_Copy(op))))), op);
                 break;
@@ -400,27 +402,34 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                 break;
             case TOK_COS_INV:
                 n[0] = num_Create("1");
+                n[1] = num_Create("1");
 
                 ret = chain(ast_MakeUnary(TOK_NEGATE,
-                    ast_MakeUnary(TOK_RECRIPROCAL,
+                    ast_MakeBinary(TOK_FRACTION,
+                        ast_MakeNumber(n[0]),
                         ast_MakeUnary(TOK_SQRT,
                             ast_MakeBinary(TOK_SUBTRACT,
-                                ast_MakeNumber(n[0]),
+                                ast_MakeNumber(n[1]),
                                 ast_MakeUnary(TOK_SQUARE,
                                     ast_Copy(op)))))), op);
                 break;
             case TOK_TAN:
-                ret = chain(ast_MakeUnary(TOK_SQUARE,
-                    ast_MakeUnary(TOK_RECRIPROCAL,
+                n[0] = num_Create("1");
+
+                ret = chain(ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(n[0]),
+                    ast_MakeUnary(TOK_SQUARE,
                         ast_MakeUnary(TOK_COS,
                             ast_Copy(op)))), op);
                 break;
             case TOK_TAN_INV:
                 n[0] = num_Create("1");
+                n[1] = num_Create("1");
 
-                ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ret = chain(ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(n[0]),
                     ast_MakeBinary(TOK_ADD,
-                        ast_MakeNumber(n[0]),
+                        ast_MakeNumber(n[1]),
                         ast_MakeUnary(TOK_SQUARE,
                             ast_Copy(op)))), op);
                 break;
@@ -430,13 +439,15 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                 break;
             case TOK_SINH_INV:
                 n[0] = num_Create("1");
+                n[1] = num_Create("1");
 
-                ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ret = chain(ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(n[0]),
                     ast_MakeUnary(TOK_SQRT,
                         ast_MakeBinary(TOK_ADD,
                             ast_MakeUnary(TOK_SQUARE,
                                 ast_Copy(op)),
-                            ast_MakeNumber(n[0])))), op);
+                            ast_MakeNumber(n[1])))), op);
                 break;
             case TOK_COSH:
                 ret = chain(ast_MakeUnary(TOK_SINH,
@@ -444,26 +455,33 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                 break;
             case TOK_COSH_INV:
                 n[0] = num_Create("1");
+                n[1] = num_Create("1");
 
-                ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ret = chain(ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(n[0]),
                     ast_MakeUnary(TOK_SQRT,
                         ast_MakeBinary(TOK_SUBTRACT,
                             ast_MakeUnary(TOK_SQUARE,
                                 ast_Copy(op)),
-                            ast_MakeNumber(n[0])))), op);
+                            ast_MakeNumber(n[1])))), op);
                 break;
             case TOK_TANH:
+                n[0] = num_Create("1");
+
                 ret = chain(ast_MakeUnary(TOK_SQUARE,
-                    ast_MakeUnary(TOK_RECRIPROCAL,
+                    ast_MakeBinary(TOK_FRACTION,
+                        ast_MakeNumber(n[0]),
                         ast_MakeUnary(TOK_COSH,
                             ast_Copy(op)))), op);
                 break;
             case TOK_TANH_INV:
                 n[0] = num_Create("1");
+                n[1] = num_Create("1");
 
-                ret = chain(ast_MakeUnary(TOK_RECRIPROCAL,
+                ret = chain(ast_MakeBinary(TOK_FRACTION,
+                    ast_MakeNumber(n[0]),
                     ast_MakeBinary(TOK_SUBTRACT,
-                        ast_MakeNumber(n[0]),
+                        ast_MakeNumber(n[1]),
                         ast_MakeUnary(TOK_SQUARE,
                             ast_Copy(op)))), op);
                 break;
