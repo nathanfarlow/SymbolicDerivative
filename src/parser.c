@@ -468,6 +468,8 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 (identifiers[type].direction == RIGHT && precedence_node(e->op.unary.operand) < precedence_node(e)
                     || (identifiers[type].direction == LEFT && precedence_node(e->op.unary.operand) <= precedence_node(e)));
 
+            paren |= is_tok_binary_operator(e->op.unary.operand->type) && precedence_node(e->op.unary.operand) < precedence_node(e);
+
             if (identifiers[type].direction == LEFT)
                 add_token(type);
 
@@ -500,8 +502,12 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 bool paren_left, paren_right;
 
                 paren_left = e->op.binary.left->type == NODE_BINARY && is_tok_binary_operator(e->op.binary.left->op.binary.operator) && precedence_node(e->op.binary.left) < precedence_node(e);
+                paren_left |= e->op.binary.left->type == NODE_UNARY && is_tok_unary_operator(e->op.binary.left->op.unary.operator) && precedence_node(e->op.binary.left) < precedence_node(e);
+
                 paren_right = e->op.binary.right->type == NODE_BINARY && is_tok_binary_operator(e->op.binary.right->op.binary.operator) 
                 && (precedence_node(e->op.binary.right) <= precedence_node(e) && !(type == TOK_MULTIPLY && is_ast_of_token(e->op.binary.right, TOK_MULTIPLY)));
+                
+                paren_right |= e->op.binary.right->type == NODE_UNARY && is_tok_unary_operator(e->op.binary.right->op.unary.operator) && precedence_node(e->op.binary.right) < precedence_node(e);
 
                 //We always need parentheses around fractions
                 paren_left |= type == TOK_FRACTION;
