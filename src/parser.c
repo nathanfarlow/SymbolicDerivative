@@ -536,7 +536,9 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                     || leftmost(e->op.binary.right)->type == NODE_SYMBOL
                     || (leftmost(e->op.binary.right)->type == NODE_BINARY && is_tok_binary_function(leftmost(e->op.binary.right)->op.binary.operator))
                     || (leftmost(e->op.binary.right)->type == NODE_UNARY && (is_tok_unary_function(leftmost(e->op.binary.right)->op.unary.operator) || identifiers[leftmost(e->op.binary.right)->op.unary.operator].direction == LEFT))
-                    )))
+                    )
+                    || e->op.binary.right->type == NODE_UNARY && e->op.binary.right->op.unary.operator == TOK_NEGATE
+                    ))
                     add_token(type);
 
                 if (paren_right)
