@@ -11,21 +11,21 @@
 #include "system.h"
 
 //expression does not contain symbol
-bool is_constant(ast_t *e) {
+bool is_constant(ast_t *e, uint8_t symbol) {
     switch (e->type) {
     case NODE_NUMBER:
         return true;
     case NODE_SYMBOL:
-        return e->op.symbol == SYMBOL_PI || e->op.symbol == SYMBOL_E;
+        return symbol != 0 && e->op.symbol != symbol;
     case NODE_UNARY:
-        return is_constant(e->op.unary.operand);
+        return is_constant(e->op.unary.operand, symbol);
     case NODE_BINARY:
-        return is_constant(e->op.binary.left) && is_constant(e->op.binary.right);
+        return is_constant(e->op.binary.left, symbol) && is_constant(e->op.binary.right, symbol);
     }
     return false;
 }
 
-#define is_val(ast, val) (is_constant(ast) && evaluate(ast, 0) == val)
+#define is_val(ast, val) (is_constant(ast, 0) && evaluate(ast, 0) == val)
 
 ast_t *simplify(ast_t *e) {
     ast_t *simplified = NULL, *target, *ret;
@@ -200,7 +200,7 @@ ast_t *simplify(ast_t *e) {
         case TOK_LOG_BASE:
             if (is_val(left, 1))
                 simplified = ast_MakeNumber(num_value_0);
-            else if (is_constant(left) && is_constant(right)
+            else if (is_constant(left, 0) && is_constant(right, 0)
                 && evaluate(left, 0) == evaluate(right, 0))
                 simplified = ast_MakeNumber(num_value_1);
             break;
@@ -234,7 +234,7 @@ ast_t *simplify(ast_t *e) {
     return ret;
 }
 
-#define needs_chain(ast) (!is_constant(ast) && ast->type != NODE_SYMBOL)
+#define needs_chain(ast) (!is_constant(ast, symbol) && ast->type != NODE_SYMBOL)
 #define chain(ast, inner) (needs_chain(ast) ? ast_MakeBinary(TOK_MULTIPLY, derivative(inner, symbol, error), ast) : ast)
 
 ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
@@ -250,7 +250,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
 
     *error = E_SUCCESS;
 
-    if (is_constant(e)) {
+    if (is_constant(e, symbol)) {
         n[0] = num_Create("0");
         ret = ast_MakeNumber(n[0]);
     }
@@ -510,7 +510,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
             case TOK_POWER: {
                 n[0] = num_Create("1");
 
-                if (is_constant(right)) {
+                if (is_constant(right, symbol)) {
                     ret = chain(ast_MakeBinary(TOK_MULTIPLY,
                         ast_Copy(right),
                         ast_MakeBinary(TOK_POWER,
@@ -565,7 +565,7 @@ ast_t *derivative(ast_t *e, uint8_t symbol, Error *error) {
                     ast_MakeNumber(n[0]),
                     ast_Copy(left));
 
-                if (is_constant(left)) {
+                if (is_constant(left, symbol)) {
                     ret = chain(ast_MakeBinary(TOK_MULTIPLY,
                         ast_Copy(rewritten_exponent),
                         ast_MakeBinary(TOK_POWER,
