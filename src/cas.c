@@ -689,7 +689,7 @@ double evaluate(ast_t *e) {
         default:
             //TODO: Implement a map for variable values
             //or throw some error here
-            return 7.5;
+            return -1;
         }
         break;
     case NODE_UNARY: {
