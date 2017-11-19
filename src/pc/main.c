@@ -68,11 +68,13 @@ int main(int argc, const char **argv) {
     unsigned size = 0;
     to_binary(deriv, &size, &error);
     
-    double x = 7.5;
-    printf("f(%g) =       %.17g\n", x, evaluate(e, x));
-    printf("f_simp(%g) =  %.17g\n", x, evaluate(simplified, x));
-    printf("f'(%g) =      %.17g\n", x, evaluate(deriv, x));
-    printf("f'_simp(%g) = %.17g\n", x, evaluate(simplified_derivative, x));
+    //hacky because the default undefined behavior when evaluate() encounters
+    //an unknown variable is to return -1 as its value
+    double x = -1;
+    printf("f(%g) =       %.17g\n", x, evaluate(e));
+    printf("f_simp(%g) =  %.17g\n", x, evaluate(simplified));
+    printf("f'(%g) =      %.17g\n", x, evaluate(deriv));
+    printf("f'_simp(%g) = %.17g\n", x, evaluate(simplified_derivative));
 
     printf("\nsize of f(x):       %i\n", ast_CountNodes(e));
     printf("size of f_simp(x):  %i\n", ast_CountNodes(simplified));
@@ -81,10 +83,10 @@ int main(int argc, const char **argv) {
 
     printf("\nBinary size: %i", size);
 
-    if (evaluate(e, x) != evaluate(simplified, x))
+    if (evaluate(e) != evaluate(simplified))
         printf("\nWARNING: Simplified expression does not equal the original at %g\n", x);
 
-    if (evaluate(deriv, x) != evaluate(simplified_derivative, x))
+    if (evaluate(deriv) != evaluate(simplified_derivative))
         printf("\nWARNING: Simplified derivative does not equal the original derivative at %g\n", x);
 
     printf("\n");

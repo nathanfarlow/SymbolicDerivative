@@ -130,7 +130,7 @@ ast_t *simplify(ast_t *e) {
                 && left->op.number.length <= 10 && right->op.number.length <= 10) {
                 char buffer[50];
                 num_t num;
-                int result = evaluate(e);
+                int result = (int)evaluate(e);
                 sprintf(buffer, "%d", result);
                 num = num_Create(buffer);
                 simplified = ast_MakeNumber(num);
@@ -146,7 +146,7 @@ ast_t *simplify(ast_t *e) {
                 && left->op.number.length <= 10 && right->op.number.length <= 10) {
                 char buffer[50];
                 num_t num;
-                int result = evaluate(e);
+                int result = (int)evaluate(e);
                 sprintf(buffer, "%d", result);
                 num = num_Create(buffer);
                 simplified = ast_MakeNumber(num);
@@ -165,7 +165,7 @@ ast_t *simplify(ast_t *e) {
                 //can be better simplified by using n-ary instead of binary
                 char buffer[50];
                 num_t num;
-                int result = evaluate(e);
+                int result = (int)evaluate(e);
                 sprintf(buffer, "%d", result);
                 num = num_Create(buffer);
                 simplified = ast_MakeNumber(num);
@@ -689,7 +689,7 @@ double evaluate(ast_t *e) {
         default:
             //TODO: Implement a map for variable values
             //or throw some error here
-            return -1;
+            return 7.5;
         }
         break;
     case NODE_UNARY: {
@@ -698,7 +698,7 @@ double evaluate(ast_t *e) {
         switch (e->op.unary.operator) {
         case TOK_NEGATE: return -1 * x;
         case TOK_RECRIPROCAL: return 1 / x;
-        case TOK_SQUARE: return pow(abs(x), 2);
+        case TOK_SQUARE: return pow(x, 2);
         case TOK_CUBE: pow(x, 3);
 
         case TOK_INT: return (int)x;
