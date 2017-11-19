@@ -438,6 +438,7 @@ ast_t *leftmost(ast_t *e) {
 
 #define is_node_function(node) (node->type == NODE_BINARY ? is_tok_function(node->op.binary.operator) : node->type == NODE_UNARY ? is_tok_function(node->op.unary.operator) : false)
 
+//Sorry, this function and the methods created for it are very messy.
 unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
 	
     switch (e->type) {
@@ -470,7 +471,7 @@ unsigned _to_binary(ast_t *e, uint8_t *data, unsigned index, Error *error) {
                 (identifiers[type].direction == RIGHT && precedence_node(e->op.unary.operand) < precedence_node(e)
                     || (identifiers[type].direction == LEFT && precedence_node(e->op.unary.operand) <= precedence_node(e)));
 
-            paren |= is_tok_binary_operator(e->op.unary.operand->type) && precedence_node(e->op.unary.operand) < precedence_node(e);
+            paren |= is_tok_binary_operator(e->op.unary.operand->type) && precedence_node(e->op.unary.operand) <= precedence_node(e);
             paren &= !is_node_function(e->op.unary.operand);
 
             if (identifiers[type].direction == LEFT)
