@@ -1,4 +1,6 @@
 # SymbolicDerivative
+This project is now deprecated! Use the updated program here: https://github.com/nathanfarlow/PineappleCAS
+
 A symbolic derivative solver for TI 84+ CE calculators
 
 You can download the current build from bin/DERIV.8xp until I set it up in github's releases. As of right now, the program uses the equation in Y1 and solves for the in respect to X and puts the derivative in Y2.
